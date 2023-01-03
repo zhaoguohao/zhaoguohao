@@ -12,3 +12,5 @@ Here are some ideas to get you started:
 - 😄 Pronouns: 哇这是帝企鹅.
 
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=zhaoguohao)](https://github.com/anuraghazra/github-readme-stats)
+
+![](https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/main/assets/github-contribution-grid-snake.svg)              
