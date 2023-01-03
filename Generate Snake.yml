@@ -1,3 +1,5 @@
+# GitHub Action for generating a contribution graph with a snake eating your contributions.
+
 name: Generate Snake
 
 on:
@@ -12,7 +14,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2.3.4
-
+      
       - name: Generate Snake
         uses: Platane/snk@master
         id: snake-gif
@@ -25,4 +27,3 @@ jobs:
         uses: EndBug/add-and-commit@v7.2.1
         with:
           branch: main
-          message: 'Generate Contribution Snake'      
