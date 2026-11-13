@@ -186,7 +186,7 @@ def stats_panel(data):
 
 
 def render(data, now):
-    return {'hero.svg': hero(data['owner']), 'date.svg': date_panel(now), 'contributions.svg': snake_panel(), 'stats.svg': stats_panel(data)}
+    return {'hero-aurora.svg': hero(data['owner']), 'date-aurora.svg': date_panel(now), 'contributions-aurora.svg': snake_panel(), 'stats-aurora.svg': stats_panel(data)}
 
 
 def main():
