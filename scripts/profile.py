@@ -135,18 +135,46 @@ def snake_heading():
     b += text(480, 105, '让每一次提交，动起来。', 40, weight=700, anchor='middle')
     b += text(480, 146, '一年的足迹。一条永不停下的贪吃蛇。', 16, '#657487', anchor='middle')
     b = b.replace('#1d1d1f', '#eaf6ff').replace('#657487', '#9cb8cd')
-    b = '<defs><radialGradient id="snake-glow" cx=".65" cy=".9" r=".9"><stop stop-color="#133c50"/><stop offset="1" stop-color="#0b1422"/></radialGradient></defs>' + rect(0, 0, 960, 400, 'url(#snake-glow)') + b
-    return svg(174, b, '#0b1422')
+    b = '<defs><radialGradient id="snake-glow" cx=".65" cy=".9" r=".9"><stop stop-color="#292845"/><stop offset="1" stop-color="#10131f"/></radialGradient></defs>' + rect(0, 0, 960, 400, 'url(#snake-glow)') + b
+    return svg(174, b, '#10131f')
 
 
 def snake_panel():
     header = snake_heading().replace('height="174"', 'height="400"').replace('960 174', '960 400')
     snake = ET.fromstring((ROOT / 'assets/github-contribution-grid-snake.svg').read_text(encoding='utf-8'))
     # Recolor only CSS palette variables; preserve all paths and keyframes.
-    palette = {'cb': '#224155', 'cs': '#edfaff', 'ce': '#182d40', 'c0': '#182d40', 'c1': '#1e5268', 'c2': '#23889b', 'c3': '#40c6ca', 'c4': '#97eee0'}
+    palette = {'cb': '#292e42', 'cs': '#b39aff', 'ce': '#1c2132', 'c0': '#1c2132', 'c1': '#33445d', 'c2': '#4e7183', 'c3': '#709fa6', 'c4': '#a7cac7'}
     for style in snake.iter('{http://www.w3.org/2000/svg}style'):
         for key, value in palette.items():
             style.text = re.sub(r'(--' + key + r':)[^;}]+', lambda match: match[1] + value, style.text or '')
+    # Preserve each segment's existing motion, but give the character a
+    # dimensional body and a distinct face. No new animation engine needed.
+    ns = '{http://www.w3.org/2000/svg}'
+    defs = ET.SubElement(snake, ns + 'defs')
+    gradient = ET.SubElement(defs, ns + 'linearGradient', {'id': 'serpent-body', 'x2': '.8', 'y2': '1'})
+    for offset, color in [('0', '#e0d2ff'), ('.45', '#aa8bf0'), ('1', '#6374da')]:
+        ET.SubElement(gradient, ns + 'stop', {'offset': offset, 'stop-color': color})
+    for segment in list(snake):
+        classes = segment.get('class', '').split()
+        if 's' not in classes:
+            continue
+        index = list(snake).index(segment)
+        group = ET.Element(ns + 'g', {'class': segment.get('class')})
+        attrs = {key: value for key, value in segment.attrib.items() if key != 'class'}
+        attrs.update({'fill': 'url(#serpent-body)', 'stroke': '#d4c3ff', 'stroke-width': '.55'})
+        attrs.update({'x': '0.1', 'y': '1', 'width': '15.8', 'height': '14', 'rx': '6', 'ry': '6'})
+        if 's3' in classes:
+            attrs.update({'x': '1', 'y': '2', 'width': '14', 'height': '12'})
+        ET.SubElement(group, ns + 'rect', attrs)
+        # A subtle specular highlight makes the small segments readable.
+        ET.SubElement(group, ns + 'ellipse', {'cx': '6', 'cy': '4', 'rx': '2.8', 'ry': '1.1', 'fill': '#ffffff', 'opacity': '.35'})
+        if 's0' in classes:
+            for x in ['4.8', '11.2']:
+                ET.SubElement(group, ns + 'circle', {'cx': x, 'cy': '5.4', 'r': '2', 'fill': '#f6f3ff'})
+                ET.SubElement(group, ns + 'circle', {'cx': x, 'cy': '5', 'r': '1', 'fill': '#201b39'})
+            ET.SubElement(group, ns + 'path', {'d': 'M5.8 10 Q8 12 10.2 10', 'fill': 'none', 'stroke': '#473766', 'stroke-width': '.8', 'stroke-linecap': 'round'})
+        snake.remove(segment)
+        snake.insert(index, group)
     snake.set('x', '40')
     snake.set('y', '184')
     snake.set('width', '880')
@@ -186,7 +214,7 @@ def stats_panel(data):
 
 
 def render(data, now):
-    return {'hero-aurora.svg': hero(data['owner']), 'date-aurora.svg': date_panel(now), 'contributions-aurora.svg': snake_panel(), 'stats-aurora.svg': stats_panel(data)}
+    return {'hero-aurora.svg': hero(data['owner']), 'date-aurora.svg': date_panel(now), 'contributions-serpent.svg': snake_panel(), 'stats-aurora.svg': stats_panel(data)}
 
 
 def main():
