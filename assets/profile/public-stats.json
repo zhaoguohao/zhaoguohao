@@ -37,24 +37,24 @@
       "color": "#76d275"
     },
     {
+      "name": "Python",
+      "bytes": 34699,
+      "color": "#3572A5"
+    },
+    {
       "name": "C",
       "bytes": 30683,
       "color": "#555555"
     },
     {
-      "name": "Python",
-      "bytes": 18465,
-      "color": "#3572A5"
-    },
-    {
-      "name": "JavaScript",
-      "bytes": 16130,
-      "color": "#f1e05a"
-    },
-    {
       "name": "Objective-C++",
       "bytes": 16011,
       "color": "#6866fb"
+    },
+    {
+      "name": "JavaScript",
+      "bytes": 14454,
+      "color": "#f1e05a"
     },
     {
       "name": "PHP",
@@ -108,7 +108,7 @@
     }
   ],
   "owner": "zhaoguohao",
-  "updated_at": "2026-11-13T21:50:36.054311+08:00",
+  "updated_at": "2026-11-14T07:40:14.764038+08:00",
   "year": 2026,
   "commits": 316,
   "prs": 1,
