@@ -3,6 +3,8 @@
 <p align="center"><strong>Always curious. Always building.</strong><br />
 从一个想法开始，让代码成为下一种可能。</p>
 
+<p align="center"><a href="https://zhaoguohao.github.io/zhaoguohao/">Aurora 独立站</a></p>
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" alt="蓝青色极光流线" />
   <br />
