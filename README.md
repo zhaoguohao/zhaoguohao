@@ -3,10 +3,8 @@
 <p align="center"><strong>Always curious. Always building.</strong><br />
 从一个想法开始，让代码成为下一种可能。</p>
 
-<p align="center"><a href="https://zhaoguohao.github.io/zhaoguohao/">Aurora 独立站</a></p>
-
 <p align="center">
-  <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" alt="蓝青色极光流线" />
+  <a href="https://zhaoguohao.github.io/zhaoguohao/" title="打开完整主页"><img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" alt="蓝青色极光流线，打开完整主页" /></a>
   <br />
   <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" alt="最近更新时间与年度进度，UTC+08:00，每六小时自动更新。" />
   <br />
