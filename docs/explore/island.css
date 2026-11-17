@@ -1,0 +1,40 @@
+:root { color-scheme: dark; font-family: system-ui, sans-serif; background: #080e1c; color: #e9fbff; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+main { min-height: 100svh; position: relative; overflow: hidden; background: radial-gradient(ellipse at 45% 60%, #193748, #080e1c 72%); }
+#island { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.back, .controls, .map, #visit, .drive-pad button { background: #0b1728e8; border: 1px solid #365069; }
+a { color: #e8f8ff; text-decoration: none; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a:hover, button:hover { color: #9bf6d9; }
+:focus-visible { outline: 2px solid #a5ffe3; outline-offset: 4px; }
+.back { position: absolute; z-index: 1; top: 20px; left: 24px; padding: 9px 13px; border-radius: 10px; font-size: .85rem; }
+.intro { position: absolute; top: 68px; left: 24px; pointer-events: none; text-shadow: 0 2px 16px #050b16; }
+h1 { margin: 0; font-size: clamp(2.35rem, 5vw, 5rem); letter-spacing: -.04em; line-height: 1.08; }
+.intro p { margin: 9px 0; color: #c1dbe6; font-size: .9rem; }
+.map { position: absolute; right: 24px; top: 20px; border-radius: 14px; padding: 8px; }
+.map a { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; font-size: .82rem; }
+.map a:hover { background: #24354c; }
+.map span { width: 8px; height: 8px; border-radius: 50%; background: #ffc587; }
+.map a:nth-child(2) span { background: #a997ff; }
+.map a:nth-child(3) span { background: #6cf1dd; }
+.status { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); color: #c1dbe6; text-align: center; min-width: 190px; }
+.controls { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; padding: 8px 12px; border-radius: 12px; font-size: .8rem; white-space: nowrap; }
+.controls button { padding: 6px 9px; border: 1px solid #365069; background: #16243a; border-radius: 7px; }
+#visit { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); border-radius: 10px; padding: 9px 14px; white-space: nowrap; }
+.drive-pad { position: absolute; bottom: 20px; right: 18px; display: none; grid-template-columns: repeat(3, 46px); gap: 6px; touch-action: none; }
+.drive-pad button { min-height: 42px; border-radius: 8px; font-size: 1.2rem; }
+.drive-pad button:first-child { grid-column: 2; }
+.drive-pad button:nth-child(2) { grid-column: 1; }
+@media (pointer: coarse), (max-width: 700px) {
+  .drive-pad { display: grid; }
+  .keys { display: none; }
+  .controls { left: 16px; transform: none; bottom: 20px; }
+  #visit { bottom: 122px; }
+}
+@media (max-width: 560px) {
+  .back, .intro { left: 14px; }
+  .map { right: 14px; }
+  .intro { top: 138px; }
+}
