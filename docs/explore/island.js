@@ -1,4 +1,8 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.min.js';
+import * as THREE from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 
 const stops = [
   {x: -17, z: -11, color: 0xffbc79, name: 'Unity 工坊'},
@@ -19,20 +23,27 @@ export function startIsland() {
   const visit = document.getElementById('visit');
   const links = [...document.querySelectorAll('[data-stop]')];
   const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'low-power'});
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.16;
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x080e1c);
-  scene.fog = new THREE.FogExp2(0x080e1c, .008);
+  scene.background = new THREE.Color(0x0b1028);
+  scene.fog = new THREE.FogExp2(0x101b33, .0085);
   const camera = new THREE.PerspectiveCamera(43, 1, .2, 250);
   const target = new THREE.Vector3();
   const view = new THREE.Vector3();
-  const sky = new THREE.HemisphereLight(0xd3f2ff, 0x4b416c, 2);
-  const sun = new THREE.DirectionalLight(0xffddb1, 2.25);
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), .48, .64, .76));
+  composer.addPass(new OutputPass());
+  const sky = new THREE.HemisphereLight(0xaecaff, 0x362d6c, 1.75);
+  const sun = new THREE.DirectionalLight(0xa9d7ff, 2.2);
   sun.position.set(-30, 36, -18);
   scene.add(sky, sun);
 
   const standard = (color, extra = {}) => new THREE.MeshStandardMaterial({color, roughness: .84, ...extra});
   const light = (color, extra = {}) => new THREE.MeshBasicMaterial({color, ...extra});
+  const neon = (color, intensity = 2.7) => light(new THREE.Color(color).multiplyScalar(intensity));
   function mesh(geometry, material, x, y, z, parent = scene) {
     const object = new THREE.Mesh(geometry, material);
     object.position.set(x, y, z);
@@ -55,16 +66,46 @@ export function startIsland() {
   }
 
   // Build the island and all of its scenery from small reusable primitives.
-  mesh(new THREE.CylinderGeometry(30.3, 24, 4.3, 24), standard(0x183e4a, {flatShading: true}), 0, -2.18, 0);
-  disk(0, .012, 0, 0, 30, standard(0x2d6065));
-  disk(0, .025, 0, 13.8, 23.6, standard(0x253449));
-  disk(0, .037, 0, 13.8, 14, light(0x58818e));
-  disk(0, .037, 0, 23.4, 23.6, light(0x58818e));
-  disk(0, .03, 0, 29.5, 29.8, light(0x6dc9ce));
+  mesh(new THREE.CylinderGeometry(30.3, 26, 4.8, 48), standard(0x172238, {metalness: .42, flatShading: true}), 0, -2.43, 0);
+  disk(0, .012, 0, 0, 30, standard(0x14213a, {metalness: .42, roughness: .54}));
+  disk(0, .025, 0, 13.8, 23.6, standard(0x212c42, {metalness: .32, roughness: .5}));
+  disk(0, .037, 0, 13.8, 13.95, neon(0x78a2ff, 1.5));
+  disk(0, .037, 0, 23.45, 23.56, neon(0xff84bf, 1.65));
+  disk(0, .03, 0, 29.5, 29.62, neon(0x4fe4ef));
+  disk(0, -1.7, 0, 29, 29.12, neon(0x5558fc, 2.3));
+  disk(0, -4.7, 0, 31, 31.1, neon(0x78edff, 1.25));
+  const roadMarks = light(0x758bac);
   for (let i = 0; i < 36; i++) {
     const angle = i * Math.PI / 18;
-    const stripe = box(Math.cos(angle) * 18.7, .045, Math.sin(angle) * 18.7, .16, .018, .9, light(0x8196a7));
+    const stripe = box(Math.cos(angle) * 18.7, .045, Math.sin(angle) * 18.7, .13, .018, 1.45, roadMarks);
     stripe.rotation.y = -angle;
+  }
+  const deckLines = new THREE.GridHelper(19, 15, 0x455f90, 0x2a3d61);
+  deckLines.position.y = .059;
+  scene.add(deckLines);
+
+  const steel = standard(0x344664, {metalness: .44, roughness: .36});
+  const black = standard(0x10182c, {metalness: .22});
+  const aqua = neon(0x48e6db);
+  const violet = neon(0x946aff);
+  const warm = neon(0xff8f67);
+  const tower = new THREE.BoxGeometry(1, 1, 1);
+  for (let i = 0; i < 42; i++) {
+    const angle = -Math.PI + i * .077 + random() * .054;
+    const radius = 39 + random() * 29;
+    const x = Math.cos(angle) * radius, z = Math.sin(angle) * radius - 10;
+    const height = 4 + random() * 20, width = 1.3 + random() * 3.3;
+    mesh(tower, i % 3 ? steel : black, x, height * .5 - 5, z).scale.set(width, height, width);
+    mesh(tower, i % 3 ? violet : aqua, x, height - 5, z).scale.set(width * .80, .17, width * .8);
+    mesh(tower, i % 3 ? aqua : warm, x, height * .78 - 5, z + width * .503).scale.set(width * .68, .11, .04);
+  }
+  for (let i = 0; i < 28; i++) {
+    const angle = i * Math.PI / 14;
+    const x = Math.cos(angle) * 27, z = Math.sin(angle) * 27;
+    box(x, .85, z, .26, 1.7, .26, steel);
+    box(x, 1.74, z, .42, .15, .42, i % 3 ? aqua : violet);
+    const marker = box(x * .96, .073, z * .96, .3, .019, 1.4, i % 3 ? aqua : violet);
+    marker.rotation.y = -angle;
   }
 
   const crystals = [];
@@ -82,19 +123,19 @@ export function startIsland() {
   crystal(3.7, 1.2, 1.42, 0x6eb9ea);
   crystal(-.6, 3.3, 1.75, 0x72e4e4);
 
-  const trunk = standard(0x60516c);
-  const foliage = [standard(0x377772), standard(0x4c9c85), standard(0x6580a3)];
-  const cone = new THREE.ConeGeometry(1, 2, 5);
-  for (let i = 0; i < 58; i++) {
+  const trunk = standard(0x332550);
+  const foliage = [standard(0x36677a), standard(0x38518b), standard(0x6e438f)];
+  const cone = new THREE.IcosahedronGeometry(1, 0);
+  for (let i = 0; i < 28; i++) {
     const angle = random() * Math.PI * 2;
-    const radius = i < 40 ? 25.9 + random() * 3.2 : 7.5 + random() * 4.5;
+    const radius = i < 18 ? 26.5 + random() * 2.5 : 9.6 + random() * 2.4;
     const x = Math.cos(angle) * radius, z = Math.sin(angle) * radius;
     const height = .7 + random() * 1.15;
-    const shadow = disk(x + .3, .045, z + .35, 0, height * .68, light(0x28535a));
+    const shadow = disk(x + .3, .045, z + .35, 0, height * .68, light(0x19263d));
     shadow.scale.y = .65;
     box(x, height * .37, z, .16, height * .74, .16, trunk);
     const tree = mesh(cone, foliage[i % foliage.length], x, height * 1.18, z);
-    tree.scale.set(height * .56, height * .76, height * .56);
+    tree.scale.set(height * .66, height * .88, height * .66);
     tree.rotation.y = random() * Math.PI;
   }
 
@@ -104,7 +145,7 @@ export function startIsland() {
     disk(x, .055, z, 0, 3.3, standard(0x32445b));
     disk(x, .066, z, 2.96, 3.18, light(color));
     const base = standard(0x4b6076);
-    const shine = light(color);
+    const shine = neon(color, 2.1);
     if (index === 0) {
       box(x, 1.05, z, 3.8, 2.1, 3.1, base);
       const roof = mesh(new THREE.ConeGeometry(2.75, 1.2, 4), standard(color), x, 2.7, z);
@@ -121,6 +162,67 @@ export function startIsland() {
     }
     beacons.push(mesh(new THREE.OctahedronGeometry(.42), shine, x, 5.25, z));
   }
+
+  const video = document.getElementById('billboard-video');
+  const toggleVideo = document.getElementById('billboard-toggle');
+  const poster = new THREE.TextureLoader().load('./black-hole-poster.jpg');
+  poster.colorSpace = THREE.SRGBColorSpace;
+  const screenMaterial = light(0xffffff, {map: poster, toneMapped: false});
+  const screen = new THREE.Group();
+  screen.position.set(-7.6, 0, -18);
+  screen.rotation.y = .07;
+  scene.add(screen);
+  for (const x of [-7.7, 7.7]) {
+    box(x, 3.9, 0, .63, 7.8, .72, steel, screen);
+    box(x, .34, 0, 2.1, .68, 1.85, black, screen);
+    box(x, 3.8, .38, .11, 6.2, .045, violet, screen);
+  }
+  box(0, 8.7, 0, 19.4, 10.9, .85, black, screen);
+  box(0, 13.9, .45, 18.7, .12, .12, aqua, screen);
+  box(0, 3.52, .45, 18.7, .12, .12, violet, screen);
+  for (const x of [-9.45, 9.45]) box(x, 8.7, .45, .11, 10.4, .14, aqua, screen);
+  const display = mesh(new THREE.PlaneGeometry(18.1, 18.1 * 9 / 16), screenMaterial, 0, 8.7, .48, screen);
+  const videoTexture = new THREE.VideoTexture(video);
+  videoTexture.colorSpace = THREE.SRGBColorSpace;
+  let wantsPlayback = true;
+  let playPending = false;
+  video.addEventListener('playing', () => {
+    screenMaterial.map = videoTexture;
+    toggleVideo.textContent = '暂停大屏';
+    toggleVideo.setAttribute('aria-pressed', 'true');
+  });
+  video.addEventListener('pause', () => {
+    toggleVideo.textContent = '播放大屏';
+    toggleVideo.setAttribute('aria-pressed', 'false');
+  });
+  video.addEventListener('error', () => {
+    screenMaterial.map = poster;
+    toggleVideo.textContent = '重试播放';
+  });
+  async function playScreen() {
+    if (playPending || document.hidden) return;
+    playPending = true;
+    video.muted = true;
+    if (!video.getAttribute('src') || video.error) video.src = video.dataset.src;
+    try { await video.play(); }
+    catch { toggleVideo.textContent = '播放大屏'; }
+    finally { playPending = false; }
+  }
+  function toggleScreen() {
+    wantsPlayback = video.paused && !playPending;
+    if (wantsPlayback) playScreen();
+    else video.pause();
+  }
+  toggleVideo.addEventListener('click', toggleScreen);
+  const cursor = new THREE.Vector2();
+  const ray = new THREE.Raycaster();
+  canvas.addEventListener('click', event => {
+    const bounds = canvas.getBoundingClientRect();
+    cursor.set(((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+      -((event.clientY - bounds.top) / bounds.height) * 2 + 1);
+    ray.setFromCamera(cursor, camera);
+    if (ray.intersectObject(display).length) toggleScreen();
+  });
 
   const stars = [];
   for (let i = 0; i < 560; i++) {
@@ -145,23 +247,65 @@ export function startIsland() {
   }
 
   const car = new THREE.Group();
+  car.scale.setScalar(1.08);
   scene.add(car);
-  const orange = standard(0xffa44d);
-  const glass = standard(0x294e63, {metalness: .25});
-  const rubber = standard(0x182230);
-  box(0, .68, 0, 1.94, .59, 3.1, orange, car);
-  box(0, 1.16, .28, 1.47, .66, 1.39, glass, car);
-  box(0, 1.51, .27, 1.55, .12, 1.48, orange, car);
+  const pearl = standard(0x648aff, {metalness: .5, roughness: .24});
+  const carbon = standard(0x111827, {metalness: .25, roughness: .33});
+  const glass = standard(0x172c48, {metalness: .47, roughness: .19});
+  const brightEdge = standard(0x9bd9ff, {metalness: .58, roughness: .22});
+  const rubber = standard(0x101523, {roughness: .93});
+  const tailLight = neon(0xff3f87, 2.4);
+  function sculptShell(sections, material) {
+    const vertices = [], indices = [], sides = 6;
+    for (const [z, width, base, crest] of sections) {
+      const shoulder = base + (crest - base) * .48;
+      for (const [x, y] of [[-width, base], [width, base], [width, shoulder],
+        [width * .76, crest], [-width * .76, crest], [-width, shoulder]]) vertices.push(x, y, z);
+    }
+    for (let ring = 0; ring < sections.length - 1; ring++) {
+      for (let side = 0; side < sides; side++) {
+        const first = ring * sides + side, next = ring * sides + (side + 1) % sides;
+        indices.push(first, next, first + sides, next, next + sides, first + sides);
+      }
+    }
+    const end = (sections.length - 1) * sides;
+    for (let side = 1; side < sides - 1; side++) indices.push(0, side + 1, side, end, end + side, end + side + 1);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    mesh(geometry, material, 0, 0, 0, car);
+  }
+  sculptShell([[-1.97, .77, .31, .54], [-1.66, 1.04, .31, .67], [-1.04, 1.12, .35, .9],
+    [-.49, .99, .38, .92], [.42, 1.04, .37, .91], [1.14, 1.14, .33, .94], [1.76, 1.02, .32, .76]], pearl);
+  sculptShell([[-.85, .63, .76, .79], [-.44, .69, .82, 1.11], [-.12, .64, .84, 1.35],
+    [.43, .65, .83, 1.35], [.93, .72, .75, .98]], glass);
+  sculptShell([[-.16, .53, 1.31, 1.35], [.02, .53, 1.33, 1.39], [.45, .53, 1.32, 1.36]], pearl);
+  box(0, .34, -1.71, 1.7, .1, .56, carbon, car);
+  box(0, .38, 1.68, 1.96, .19, .27, carbon, car);
+  box(0, .65, 1.782, 1.58, .055, .038, tailLight, car);
+  box(0, 1.02, 1.58, 1.95, .075, .27, pearl, car);
   const wheels = [];
-  for (const x of [-1, 1]) {
-    box(x * .61, .77, -1.57, .36, .23, .07, light(0xe8fff4), car);
-    box(x * .65, .74, 1.57, .29, .18, .07, light(0xff647e), car);
-    for (const z of [-.92, .98]) {
+  for (const side of [-1, 1]) {
+    const headlight = box(side * .68, .64, -1.69, .58, .068, .046, neon(0xc9f9ff), car);
+    headlight.rotation.y = side * .25;
+    box(side * 1.015, .34, .02, .14, .16, 1.5, carbon, car);
+    box(side * 1.095, .35, .02, .025, .035, 1.03, aqua, car);
+    box(side * .68, .91, 1.59, .1, .19, .135, carbon, car);
+    box(side * .77, .99, -.4, .23, .10, .21, pearl, car);
+    for (const z of [-1.13, 1.17]) {
       const axle = new THREE.Group();
-      axle.position.set(x * 1.02, .42, z);
+      axle.position.set(side * 1.045, .42, z);
       car.add(axle);
-      mesh(new THREE.CylinderGeometry(.42, .42, .35, 12), rubber, 0, 0, 0, axle).rotation.z = Math.PI / 2;
-      mesh(new THREE.CylinderGeometry(.22, .22, .355, 10), orange, 0, 0, 0, axle).rotation.z = Math.PI / 2;
+      mesh(new THREE.CylinderGeometry(.42, .42, .36, 24), rubber, 0, 0, 0, axle).rotation.z = Math.PI / 2;
+      mesh(new THREE.CylinderGeometry(.30, .30, .365, 24), carbon, 0, 0, 0, axle).rotation.z = Math.PI / 2;
+      mesh(new THREE.TorusGeometry(.282, .018, 8, 24), brightEdge, side * .187, 0, 0, axle).rotation.y = Math.PI / 2;
+      for (let spoke = 0; spoke < 6; spoke++) {
+        const angle = spoke * Math.PI / 3;
+        const bar = box(side * .19, .165 * Math.cos(angle), .165 * Math.sin(angle), .022, .21, .037, brightEdge, axle);
+        bar.rotation.x = angle;
+      }
+      mesh(new THREE.CylinderGeometry(.082, .082, .40, 12), brightEdge, 0, 0, 0, axle).rotation.z = Math.PI / 2;
       wheels.push(axle);
     }
   }
@@ -173,7 +317,12 @@ export function startIsland() {
   const touches = new Map();
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let velocity = 0, yaw = 0, nearby = -1;
-  let previous = 0, animation = 0;
+  let previous = 0, animation = 0, overview = false;
+  const cameraButton = document.getElementById('camera-toggle');
+  cameraButton.addEventListener('click', () => {
+    overview = !overview;
+    cameraButton.textContent = overview ? '跟车' : '俯瞰';
+  });
   function reset() {
     car.position.copy(start);
     velocity = 0;
@@ -188,6 +337,7 @@ export function startIsland() {
     camera.fov = camera.aspect < .95 ? 56 : 43;
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
+    composer.setSize(width, height);
   }
   function draw(time) {
     const dt = previous ? Math.min((time - previous) / 1000, .04) : 0;
@@ -228,13 +378,14 @@ export function startIsland() {
       });
     }
 
-    target.set(car.position.x * .38, 0, car.position.z * .38);
-    view.set(target.x + 34, 47, target.z + 41);
-    if (camera.aspect < .95) view.multiplyScalar(1.27);
+    target.set(car.position.x * .52 - 2, overview ? 1 : 3, car.position.z * .36 - 5.8);
+    if (overview) view.set(target.x + 31, 47, target.z + 42);
+    else view.set(target.x + 10, 20, target.z + 39);
+    if (camera.aspect < .95) view.sub(target).multiplyScalar(1.45).add(target);
     if (dt && !motion.matches) camera.position.lerp(view, 1 - Math.exp(-dt * 5));
     else camera.position.copy(view);
     camera.lookAt(target);
-    renderer.render(scene, camera);
+    composer.render();
     animation = requestAnimationFrame(draw);
   }
 
@@ -249,10 +400,14 @@ export function startIsland() {
   window.addEventListener('blur', () => { keyboard.clear(); touches.clear(); });
   document.addEventListener('visibilitychange', () => {
     cancelAnimationFrame(animation);
+    if (document.hidden) video.pause();
     keyboard.clear();
     touches.clear();
     previous = 0;
-    if (!document.hidden) animation = requestAnimationFrame(draw);
+    if (!document.hidden) {
+      animation = requestAnimationFrame(draw);
+      if (wantsPlayback) playScreen();
+    }
   });
   for (const button of document.querySelectorAll('[data-key]')) {
     button.addEventListener('pointerdown', event => {
@@ -277,4 +432,5 @@ export function startIsland() {
   document.querySelector('.controls').hidden = false;
   document.querySelector('.drive-pad').hidden = false;
   status.hidden = true;
+  requestAnimationFrame(() => { if (wantsPlayback) playScreen(); });
 }
