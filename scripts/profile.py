@@ -105,11 +105,12 @@ def hero(owner):
     for i in range(100):
         v = i / 99
         points = []
-        for j in range(241):
-            u = j / 240
+        # The wave stays smooth at display size with 60 segments per line.
+        for j in range(61):
+            u = j / 60
             x = 70 + 820 * u
             y = 580 + 65 * (v - .5) + 105 * math.sin(2.2 * math.pi * u + .9 * v) * math.exp(-((u - .52) / .48) ** 2) + 38 * v * math.sin(math.pi * u)
-            points.append(f'{x:.2f},{y:.2f}')
+            points.append(f'{x:.1f},{y:.1f}')
         b += f'<polyline points="{" ".join(points)}" fill="none" stroke="url(#silk)" stroke-width=".65" opacity="{.2 + .5 * math.sin(math.pi*v):.3f}"/>'
     b += text(40, 745, 'CODE · CREATE · EXPLORE', 11, '#9eb8ce') + text(920, 745, 'SKYSTAR STUDIO / EARTH', 11, '#728192', anchor='end')
     return svg(780, b, '#080c13')
