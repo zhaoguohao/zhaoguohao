@@ -13,6 +13,14 @@
   a { color: #a6c7ed; }
   p { font-size: 12px; color: #8b949e; }
   .intro { text-align: center; font-size: 1rem; color: inherit; }
+  .site-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 44px; }
+  .wind-controls { display: flex; gap: 8px; }
+  .wind-controls[hidden] { display: none; }
+  .wind-controls button { padding: 6px 12px; border: 1px solid #4b647c; border-radius: 999px; background: #151f2b; color: #e6edf3; font: inherit; font-size: .875rem; cursor: pointer; }
+  .wind-controls button:hover { border-color: #8bd9de; }
+  .wind-controls button:focus-visible { outline: 2px solid #8bd9de; outline-offset: 3px; }
+  .hero { position: relative; overflow: hidden; border-radius: 12px 12px 0 0; }
+  .hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .deferred-art { position: relative; background: #161b22; }
   .deferred-art [hidden] { display: none; }
   .art-status { position: absolute; top: 0; inset-inline-start: 0; margin: 0; padding: 14px 16px; }
@@ -21,11 +29,20 @@
 </head>
 <body>
 <main>
-  <p><a href="https://github.com/zhaoguohao">GitHub / zhaoguohao</a></p>
+  <div class="site-header">
+    <p><a href="https://github.com/zhaoguohao">GitHub / zhaoguohao</a></p>
+    <div class="wind-controls" hidden>
+      <button type="button" id="gust">起风</button>
+      <button type="button" id="toggle-motion">暂停动效</button>
+    </div>
+  </div>
   <h1>zhaoguohao</h1>
   <p class="intro"><strong>Always curious. Always building.</strong><br />
     从一个想法开始，让代码成为下一种可能。</p>
-  <img id="hero-art" src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="Always curious. Always building.">
+  <div class="hero">
+    <img id="hero-art" src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="蓝青色极光流线">
+    <canvas aria-hidden="true"></canvas>
+  </div>
   <div class="deferred-art" style="aspect-ratio: 960 / 406">
     <p class="art-status">加载中 · 最近更新时间与年度进度</p>
     <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" alt="最近更新时间与年度进度">
@@ -94,6 +111,11 @@
   } else {
     deferredArt.forEach(requestImage);
   }
+
+  hero.decode()
+    .then(() => import('./aurora-wind.js'))
+    .then(({startWind}) => startWind())
+    .catch(() => {});
 </script>
 </body>
 </html>
