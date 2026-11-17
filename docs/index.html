@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="zhaoguohao 的个人主页。探索、创造与开源贡献。"><link rel="preconnect" href="https://raw.githubusercontent.com">
+<title>zhaoguohao · Aurora</title>
+<style>
+  body { margin: 0; background: #0d1117; padding: clamp(12px, 3vw, 30px); font-family: system-ui, sans-serif; color: #e6edf3; }
+  main { max-width: 900px; margin: auto; border: 1px solid #30363d; padding: clamp(12px, 2.5vw, 24px); border-radius: 8px; }
+  h1 { text-align: center; font-size: 2rem; }
+  img { width: 100%; height: auto; display: block; }
+  img { background: #161b22; }
+  a { color: #a6c7ed; }
+  p { font-size: 12px; color: #8b949e; }
+  .intro { text-align: center; font-size: 1rem; color: inherit; }
+</style>
+<noscript><style>img[data-src] { display: none; }</style></noscript>
+</head>
+<body>
+<main>
+  <p><a href="https://github.com/zhaoguohao">GitHub / zhaoguohao</a></p>
+  <h1>zhaoguohao</h1>
+  <p class="intro"><strong>Always curious. Always building.</strong><br />
+    从一个想法开始，让代码成为下一种可能。</p>
+  <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="Always curious. Always building.">
+  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" style="aspect-ratio: 960 / 406" alt="最近更新时间与年度进度">
+  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" style="aspect-ratio: 960 / 400" alt="GitHub 贡献贪吃蛇动画">
+  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/stats-aurora.svg" width="960" height="510" style="aspect-ratio: 960 / 510" alt="公开 GitHub 统计与语言占比">
+  <noscript>
+    <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" alt="最近更新时间与年度进度">
+    <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
+    <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/stats-aurora.svg" width="960" height="510" alt="公开 GitHub 统计与语言占比">
+  </noscript>
+</main>
+<script>
+  const deferredImages = document.querySelectorAll('img[data-src]');
+
+  function requestImage(image) {
+    image.src = image.dataset.src;
+    delete image.dataset.src;
+  }
+
+  if ('IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          observer.unobserve(entry.target);
+          requestImage(entry.target);
+        }
+      }
+    });
+    deferredImages.forEach((image) => observer.observe(image));
+  } else {
+    deferredImages.forEach(requestImage);
+  }
+</script>
+</body>
+</html>
