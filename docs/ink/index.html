@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="墨间，zhaoguohao 的交互水墨习作。">
+  <title>墨间 · zhaoguohao</title>
+  <link rel="stylesheet" href="./ink.css">
+  <script src="./ink.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="hero" id="top" aria-labelledby="title">
+      <canvas class="wash" aria-hidden="true"></canvas>
+      <header class="masthead">
+        <a href="../">← 个人站</a>
+        <a href="#mountain">山径 ↓</a>
+      </header>
+      <div class="hero-copy">
+        <p class="signature">zhaoguohao 的水墨习作</p>
+        <h1 id="title">墨<span>间</span></h1>
+        <p class="lede">一滴墨，一段山路。</p>
+        <div class="ink-controls" hidden>
+          <p>在纸上轻点或拖动，晕开一滴墨。</p>
+          <div class="tools" role="group" aria-label="画笔">
+            <button class="swatch" type="button" data-color="ink" aria-label="墨黑" aria-pressed="true"></button>
+            <button class="swatch" type="button" data-color="blue" aria-label="靛青" aria-pressed="false"></button>
+            <button class="swatch" type="button" data-color="red" aria-label="朱砂" aria-pressed="false"></button>
+            <button type="button" id="wash-clear">清墨</button>
+            <button type="button" id="wash-pause" aria-pressed="false">暂停流动</button>
+          </div>
+        </div>
+      </div>
+      <svg class="hero-peak" viewBox="0 0 960 340" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
+        <path fill="#365368" fill-opacity=".22" d="M0 340 143 259 214 274 329 190 375 205 548 97 603 138 704 65 755 113 787 107 960 267V340Z"/>
+        <path fill="#173343" fill-opacity=".62" d="M260 340 415 267 468 276 554 207 601 216 733 125 778 174 810 168 960 287V340Z"/>
+        <path fill="#162c37" d="M476 340 603 286 631 292 761 226 802 242 856 207 888 235 960 260V340Z"/>
+      </svg>
+    </section>
+
+    <section class="mountain" id="mountain" aria-labelledby="mountain-title">
+      <div class="chapter">
+        <div class="chapter-copy">
+          <p class="signature">山径</p>
+          <h2 id="mountain-title">循着线，<br>往山里走。</h2>
+          <p>往下滚动，山脊会一笔一笔出现。</p>
+        </div>
+        <svg class="drawing" viewBox="0 0 760 440" aria-hidden="true">
+          <circle class="sun" cx="494" cy="118" r="49"/>
+          <path class="faint" d="M50 345Q169 310 269 346T516 351T745 339M90 375Q242 343 351 386T641 374"/>
+          <path class="stroke distant" pathLength="1" d="M3 333 86 286 122 293 189 228 226 252 306 183 346 211 427 161 474 205 536 151 602 211 649 193 752 299"/>
+          <path class="stroke" pathLength="1" d="M14 379Q90 360 139 331L204 274 239 291 305 219 334 244 430 152 464 188 493 185 548 259 578 249 643 314 700 300 752 334"/>
+          <path class="stroke detail" pathLength="1" d="M283 251 222 339 166 357M428 154 394 240 338 288 312 344M465 188 440 254 476 285 458 322M492 186 482 222 516 281 496 335M548 259 534 289 565 315 546 354M632 306 608 328 647 350"/>
+          <path class="stroke bank" pathLength="1" d="M9 410Q149 371 292 402T567 405T756 391"/>
+        </svg>
+      </div>
+    </section>
+
+    <section class="closing" aria-labelledby="closing-title">
+      <div class="closing-inner">
+        <span class="seal" aria-hidden="true">墨</span>
+        <h2 id="closing-title">笔停，<br>山还在那里。</h2>
+        <div class="routes">
+          <a href="../">返回个人站 ↗</a>
+          <a href="../explore/">开车探索 3D 极光岛 ↗</a>
+          <a href="#top">回到纸上 ↑</a>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
