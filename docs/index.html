@@ -21,18 +21,25 @@
   .rail-nav a { display: flex; align-items: center; gap: 10px; }
   .rail-nav a::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #76c9cf; box-shadow: 0 0 10px #76c9cf75; }
   #top, .deferred-art { scroll-margin-top: 24px; }
-  @media (min-width: 86rem) {
+  @media (min-width: 76rem) {
     body {
       background:
         radial-gradient(ellipse at 7% 17%, #203b524d, transparent 36rem),
         radial-gradient(ellipse at 93% 27%, #1b5a5542, transparent 35rem),
         #0d1117;
     }
-    .page-layout { max-width: 1530px; grid-template-columns: minmax(200px, 1fr) minmax(0, 950px) minmax(200px, 1fr); gap: clamp(22px, 2.15vw, 42px); align-items: start; }
+    .page-layout {
+      max-width: 2000px;
+      grid-template-columns: minmax(185px, 1fr) minmax(0, 3.4fr) minmax(185px, 1fr);
+      gap: clamp(20px, 1.5vw, 36px);
+      align-items: start;
+    }
     main { grid-area: 1 / 2; }
-    .rail { position: sticky; }
-    .rail-projects { grid-area: 1 / 1; top: 32px; margin-top: 190px; }
-    .rail-nav { display: block; grid-area: 1 / 3; top: 32px; margin-top: 255px; }
+    .rail { position: sticky; top: 32px; margin-top: 208px; }
+    .rail-projects { grid-area: 1 / 1; }
+    .rail-nav { display: block; grid-area: 1 / 3; }
+    .rail-card { padding: clamp(16px, 1.25vw, 26px); }
+    .rail-card a { font-size: clamp(.875rem, .8vw, 1rem); }
   }
   h1 { text-align: center; font-size: 2rem; }
   img { width: 100%; height: auto; display: block; }
