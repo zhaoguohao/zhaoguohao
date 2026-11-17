@@ -1,14 +1,26 @@
 const hero = document.querySelector('.hero');
 const mountain = document.querySelector('.mountain');
 const drawing = document.querySelector('.drawing');
+const closing = document.querySelector('.closing');
 const motion = matchMedia('(prefers-reduced-motion: reduce)');
 let scrollFrame = 0;
+let drawnProgress = null;
 
 function updateDrawing() {
   scrollFrame = 0;
   const bounds = mountain.getBoundingClientRect();
-  const progress = Math.max(0, Math.min(1, (innerHeight * .84 - bounds.top) / (bounds.height * .66)));
-  drawing.style.setProperty('--remaining', motion.matches ? 0 : 1 - progress);
+  const progress = Math.max(0, Math.min(1, (innerHeight * .88 - bounds.top) / (bounds.height * .78)));
+  const difference = drawnProgress === null ? 0 : progress - drawnProgress;
+  drawnProgress = Math.abs(difference) < .002 ? progress : drawnProgress + difference * .24;
+  drawing.style.setProperty('--remaining', motion.matches ? 0 : 1 - drawnProgress);
+  const drift = motion.matches ? 0 : Math.max(-1, Math.min(1, (bounds.top + bounds.height / 2 - innerHeight / 2) / innerHeight));
+  drawing.style.setProperty('--sun-drift', `${drift * -66}px`);
+  drawing.style.setProperty('--ridge-drift', `${drift * -35}px`);
+  drawing.style.setProperty('--bank-drift', `${drift * 24}px`);
+  const closingProgress = motion.matches ? 1 : Math.max(0, Math.min(1, (innerHeight - closing.getBoundingClientRect().top) / (innerHeight * .76)));
+  closing.style.setProperty('--reveal', closingProgress);
+  closing.style.setProperty('--wash-drift', `${(1 - closingProgress) * 85}px`);
+  if (!motion.matches && Math.abs(difference) >= .002) scheduleDrawing();
 }
 function scheduleDrawing() {
   if (!scrollFrame) scrollFrame = requestAnimationFrame(updateDrawing);
@@ -27,7 +39,7 @@ const fragmentSource = `
   uniform vec2 resolution;
   uniform float time;
   uniform float ambient;
-  uniform vec4 drops[8];
+  uniform sampler2D inkMap;
 
   float grain(vec2 q) { return fract(sin(dot(q, vec2(127.1, 311.7))) * 4375.13); }
   float noise2(vec2 q) {
@@ -65,19 +77,51 @@ const fragmentSource = `
     vec3 pigment = mix(vec3(.14,.25,.29), vec3(.35,.48,.48), strata);
     vec3 inked = mix(paper, pigment, density);
 
-    for (int i=0; i<8; i++) {
-      float age = max(0.,time-drops[i].z);
-      if (age >= 9.) continue;
-      vec2 delta = p-drops[i].xy*scaled;
-      vec2 warped = delta+distort(delta+vec2(float(i)),t)*(.57+.22*min(age,1.));
-      float edge = length(warped)+field(warped*21.+float(i))*.086;
-      float size = .09 + min(age*.022,.21);
-      float bloom = (1.-smoothstep(size*.36,size,edge))*(1.-smoothstep(3.,9.,age));
-      vec3 shade = drops[i].w < .5 ? vec3(.10,.17,.19)
-        : (drops[i].w < 1.5 ? vec3(.23,.34,.56) : vec3(.63,.21,.15));
-      inked = mix(inked,shade,bloom*.68);
-    }
+    vec4 ink = texture2D(inkMap, uv);
+    inked = mix(inked, ink.rgb, ink.a * .84);
     gl_FragColor = vec4(inked,1.);
+  }
+`;
+
+const transportSource = `
+  precision highp float;
+  uniform vec2 size;
+  uniform sampler2D previousInk;
+  uniform vec4 stroke;
+  uniform vec3 pigment;
+  uniform float radius;
+  uniform float active;
+  uniform float time;
+  uniform float dt;
+  void main() {
+    vec2 uv = gl_FragCoord.xy / size;
+    vec2 aspect = vec2(size.x / size.y, 1.);
+    vec2 p = uv * aspect;
+    vec2 drift = vec2(
+      sin(p.y*10.+time*.67) + .62*cos(p.x*6.1+p.y*8.-time*.45),
+      cos(p.x*8.4-time*.53) + .57*sin(p.y*6.+p.x*5.+time*.38)
+    ) * .048;
+    vec2 delta = (stroke.zw-stroke.xy)*aspect;
+    vec2 offset = p-stroke.zw*aspect;
+    float wake = exp(-dot(offset,offset)*38.);
+    drift += delta * wake * 4.3 * active;
+    vec2 sampleAt = uv - drift*dt/aspect;
+    vec2 pixel = 1./size;
+    vec4 before = texture2D(previousInk, sampleAt)*.64
+      + (texture2D(previousInk,sampleAt + vec2(pixel.x,0.))
+      + texture2D(previousInk,sampleAt - vec2(pixel.x,0.))
+      + texture2D(previousInk,sampleAt + vec2(0.,pixel.y))
+      + texture2D(previousInk,sampleAt - vec2(0.,pixel.y))) * .09;
+    float edge = smoothstep(0.,.045,min(min(uv.x,1.-uv.x),min(uv.y,1.-uv.y)));
+    before.a = max(0.,before.a - dt*.16) * edge;
+    vec2 fromStart = p-stroke.xy*aspect;
+    float along = clamp(dot(fromStart,delta)/max(dot(delta,delta),.00001),0.,1.);
+    float distance = length(fromStart - along*delta);
+    float texture = .85+.15*sin(p.x*176.+p.y*63.)*cos(p.y*145.);
+    float added = (1.-smoothstep(radius*.22,radius,distance))*active*texture;
+    float alpha = added + before.a*(1.-added);
+    vec3 rgb = mix(before.rgb,pigment,added/max(alpha,.001));
+    gl_FragColor = vec4(rgb,alpha);
   }
 `;
 
@@ -85,64 +129,132 @@ function startWash() {
   const canvas = document.querySelector('.wash');
   const gl = canvas.getContext('webgl', {alpha: false, antialias: false, powerPreference: 'low-power'});
   if (!gl) return;
-  const program = gl.createProgram();
-  for (const [kind, source] of [[gl.VERTEX_SHADER, vertexSource], [gl.FRAGMENT_SHADER, fragmentSource]]) {
-    const shader = gl.createShader(kind);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return;
-    gl.attachShader(program, shader);
-    gl.deleteShader(shader);
+  function makeProgram(fragment, names) {
+    const program = gl.createProgram();
+    for (const [kind, source] of [[gl.VERTEX_SHADER, vertexSource], [gl.FRAGMENT_SHADER, fragment]]) {
+      const shader = gl.createShader(kind);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) throw Error(gl.getShaderInfoLog(shader));
+      gl.attachShader(program, shader);
+      gl.deleteShader(shader);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw Error(gl.getProgramInfoLog(program));
+    return {program, position: gl.getAttribLocation(program, 'position'),
+      uniforms: Object.fromEntries(names.map(name => [name, gl.getUniformLocation(program, name)]))};
   }
-  gl.linkProgram(program);
-  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
-  gl.useProgram(program);
-  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  const render = makeProgram(fragmentSource, ['resolution', 'time', 'ambient', 'inkMap']);
+  const transport = makeProgram(transportSource, ['size', 'previousInk', 'stroke', 'pigment', 'radius', 'active', 'time', 'dt']);
+  const triangle = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, triangle);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-  const position = gl.getAttribLocation(program, 'position');
-  gl.enableVertexAttribArray(position);
-  gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-  const uniforms = Object.fromEntries(['resolution', 'time', 'ambient', 'drops[0]'].map(name => [name, gl.getUniformLocation(program, name)]));
-  const drops = new Float32Array(32);
   const controls = document.querySelector('.ink-controls');
   const pause = document.getElementById('wash-pause');
-  let slot = 0, color = 0, time = 0, ambient = 1;
-  let previous = 0, frame = 0, lastStroke = 0, visible = true, lost = false;
+  const ambientButton = document.getElementById('wash-ambient');
+  const touch = document.getElementById('wash-touch');
+  const brush = document.getElementById('wash-size');
+  const shades = [[.09,.17,.19], [.18,.31,.55], [.69,.18,.12]];
+  let color = 0, time = 0, ambient = 1, inkUntil = 0;
+  let previous = 0, frame = 0, visible = true, lost = false;
   let flowing = !motion.matches;
+  let buffers = [], bufferWidth, bufferHeight;
+  let point = null;
 
-  function clearDrops() {
-    for (let i = 0; i < drops.length; i += 4) drops[i + 2] = -20;
+  function use(pass, framebuffer, width, height, texture) {
+    gl.useProgram(pass.program);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.viewport(0, 0, width, height);
+    gl.bindBuffer(gl.ARRAY_BUFFER, triangle);
+    gl.enableVertexAttribArray(pass.position);
+    gl.vertexAttribPointer(pass.position, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    return pass.uniforms;
+  }
+  function createBuffer() {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    for (const [param, value] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR],
+      [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) {
+      gl.texParameteri(gl.TEXTURE_2D, param, value);
+    }
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, bufferWidth, bufferHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    return {texture, framebuffer};
+  }
+  function clearInk() {
+    gl.clearColor(0, 0, 0, 0);
+    for (const {framebuffer} of buffers) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+    }
+    inkUntil = 0;
+    point = null;
+  }
+  function advect(dt, from = [0, 0], to = from, active = 0) {
+    const [current, next] = buffers;
+    const uniforms = use(transport, next.framebuffer, bufferWidth, bufferHeight, current.texture);
+    gl.uniform1i(uniforms.previousInk, 0);
+    gl.uniform2f(uniforms.size, bufferWidth, bufferHeight);
+    gl.uniform4f(uniforms.stroke, ...from, ...to);
+    gl.uniform3fv(uniforms.pigment, shades[color]);
+    gl.uniform1f(uniforms.radius, .019 + Number(brush.value) * .014);
+    gl.uniform1f(uniforms.time, time);
+    gl.uniform1f(uniforms.active, active);
+    gl.uniform1f(uniforms.dt, dt);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    buffers = [next, current];
   }
   function paint() {
-    if (lost) return;
+    if (lost || !buffers.length) return;
+    const uniforms = use(render, null, canvas.width, canvas.height, buffers[0].texture);
+    gl.uniform1i(uniforms.inkMap, 0);
+    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
     gl.uniform1f(uniforms.time, time);
     gl.uniform1f(uniforms.ambient, ambient);
-    gl.uniform4fv(uniforms['drops[0]'], drops);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   function fit() {
+    if (lost) return;
     const width = Math.max(1, hero.clientWidth), height = Math.max(1, hero.clientHeight);
-    const ratio = Math.min(.85, 1050 / width, 760 / height);
-    canvas.width = Math.round(width * ratio);
-    canvas.height = Math.round(height * ratio);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+    const ratio = Math.min(.82, 1000 / width, 720 / height);
+    const nextWidth = Math.max(1, Math.round(width * ratio)), nextHeight = Math.max(1, Math.round(height * ratio));
+    if (buffers.length && canvas.width === nextWidth && canvas.height === nextHeight) return;
+    canvas.width = nextWidth;
+    canvas.height = nextHeight;
+    for (const {texture, framebuffer} of buffers) {
+      gl.deleteTexture(texture);
+      gl.deleteFramebuffer(framebuffer);
+    }
+    bufferWidth = Math.max(1, Math.round(nextWidth * .55));
+    bufferHeight = Math.max(1, Math.round(nextHeight * .55));
+    buffers = [createBuffer(), createBuffer()];
+    clearInk();
     paint();
   }
   function animate(now) {
-    if (previous && now - previous < 32) {
-      frame = requestAnimationFrame(animate);
-      return;
-    }
-    if (previous) time += Math.min((now - previous) / 1000, .1);
+    const dt = previous ? Math.min((now - previous) / 1000, .048) : 0;
     previous = now;
+    time += dt;
+    if (time < inkUntil) advect(dt);
+    else if (inkUntil) {
+      clearInk();
+      if (!ambient) {
+        paint();
+        sync();
+        return;
+      }
+    }
     paint();
     frame = requestAnimationFrame(animate);
   }
   function sync() {
     pause.textContent = flowing ? '暂停流动' : '继续流动';
     pause.setAttribute('aria-pressed', String(!flowing));
-    if (flowing && visible && !document.hidden && !lost) {
+    if (flowing && (ambient || inkUntil) && visible && !document.hidden && !lost) {
       if (!frame) frame = requestAnimationFrame(animate);
     } else {
       cancelAnimationFrame(frame);
@@ -150,19 +262,26 @@ function startWash() {
       previous = 0;
     }
   }
-  function addDrop(event) {
+  function addDrop(event, continuing = false) {
     const bounds = hero.getBoundingClientRect();
-    drops.set([(event.clientX - bounds.left) / bounds.width, 1 - (event.clientY - bounds.top) / bounds.height, time, color], slot * 4);
-    slot = (slot + 1) % 8;
-    lastStroke = performance.now();
+    const next = [(event.clientX - bounds.left) / bounds.width, 1 - (event.clientY - bounds.top) / bounds.height];
+    const from = continuing && point ? point : next;
+    advect(flowing ? .016 : 0, from, next, continuing ? .71 : .88);
+    point = next;
+    inkUntil = time + 12;
     paint();
+    sync();
   }
   hero.addEventListener('pointerdown', event => {
-    if (event.button === 0 && !event.target.closest('button, a')) addDrop(event);
+    if (!lost && event.button === 0 && !event.target.closest('button, a, input, label')) addDrop(event);
   });
   hero.addEventListener('pointermove', event => {
-    if ((event.buttons & 1) && !event.target.closest('button, a') && performance.now() - lastStroke > 100) addDrop(event);
+    if (lost || !point || !(event.buttons & 1) || event.target.closest('button, a, input, label')) return;
+    if (event.pointerType !== 'touch' || hero.classList.contains('brush-mode')) addDrop(event, true);
   }, {passive: true});
+  for (const event of ['pointerup', 'pointercancel', 'pointerleave']) {
+    hero.addEventListener(event, () => { point = null; });
+  }
   const palette = [...document.querySelectorAll('.swatch')];
   palette.forEach((button, index) => button.addEventListener('click', () => {
     color = index;
@@ -170,8 +289,19 @@ function startWash() {
   }));
   document.getElementById('wash-clear').addEventListener('click', () => {
     ambient = 0;
-    clearDrops();
+    ambientButton.setAttribute('aria-pressed', 'false');
+    clearInk();
     paint();
+    sync();
+  });
+  ambientButton.addEventListener('click', () => {
+    ambient = 1 - ambient;
+    ambientButton.setAttribute('aria-pressed', String(Boolean(ambient)));
+    paint();
+    sync();
+  });
+  touch.addEventListener('click', () => {
+    touch.setAttribute('aria-pressed', String(hero.classList.toggle('brush-mode')));
   });
   pause.addEventListener('click', () => { flowing = !flowing; sync(); });
   motion.addEventListener('change', () => { flowing = !motion.matches; sync(); });
@@ -184,10 +314,9 @@ function startWash() {
   });
   new ResizeObserver(fit).observe(hero);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }).observe(hero);
-  clearDrops();
   fit();
   controls.hidden = false;
   sync();
 }
 
-startWash();
+try { startWash(); } catch (error) { console.warn('Ink rendering unavailable', error); }

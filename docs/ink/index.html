@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="墨间，zhaoguohao 的交互水墨习作。">
   <title>墨间 · zhaoguohao</title>
-  <link rel="stylesheet" href="./ink.css">
-  <script src="./ink.js" defer></script>
+  <link rel="stylesheet" href="./ink.css?v=flow">
+  <script src="./ink.js?v=flow" defer></script>
 </head>
 <body>
   <main>
@@ -28,7 +28,10 @@
             <button class="swatch" type="button" data-color="red" aria-label="朱砂" aria-pressed="false"></button>
             <button type="button" id="wash-clear">清墨</button>
             <button type="button" id="wash-pause" aria-pressed="false">暂停流动</button>
+            <button type="button" id="wash-ambient" aria-pressed="true">环境墨流</button>
+            <button type="button" id="wash-touch" aria-pressed="false">触屏绘画</button>
           </div>
+          <label class="brush">笔触 <input id="wash-size" type="range" min="1" max="5" step="1" value="3"></label>
         </div>
       </div>
       <svg class="hero-peak" viewBox="0 0 960 340" preserveAspectRatio="xMaxYMax meet" aria-hidden="true">
