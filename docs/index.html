@@ -25,7 +25,7 @@
   <h1>zhaoguohao</h1>
   <p class="intro"><strong>Always curious. Always building.</strong><br />
     从一个想法开始，让代码成为下一种可能。</p>
-  <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="Always curious. Always building.">
+  <img id="hero-art" src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="Always curious. Always building.">
   <div class="deferred-art" style="aspect-ratio: 960 / 406">
     <p class="art-status">加载中 · 最近更新时间与年度进度</p>
     <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" alt="最近更新时间与年度进度">
@@ -64,16 +64,33 @@
     image.src = source;
   }
 
+  const hero = document.getElementById('hero-art');
+
   if ('IntersectionObserver' in window) {
-    const observer = new IntersectionObserver((entries) => {
+    function loadIntersectingArt(entries, observer) {
       for (const entry of entries) {
         if (entry.isIntersecting) {
           observer.unobserve(entry.target);
           requestImage(entry.target);
         }
       }
+    }
+
+    const [datePanel, ...otherPanels] = deferredArt;
+    const observer = new IntersectionObserver(loadIntersectingArt);
+    otherPanels.forEach((panel) => observer.observe(panel));
+
+    // Start the small date card near the viewport after the lead artwork.
+    const dateObserver = new IntersectionObserver(loadIntersectingArt, {
+      rootMargin: '0px 0px 240px 0px'
     });
-    deferredArt.forEach((panel) => observer.observe(panel));
+    const watchDate = () => dateObserver.observe(datePanel);
+    if (hero.complete) {
+      watchDate();
+    } else {
+      hero.addEventListener('load', watchDate, {once: true});
+      hero.addEventListener('error', watchDate, {once: true});
+    }
   } else {
     deferredArt.forEach(requestImage);
   }
