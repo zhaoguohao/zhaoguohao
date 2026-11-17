@@ -13,8 +13,11 @@
   a { color: #a6c7ed; }
   p { font-size: 12px; color: #8b949e; }
   .intro { text-align: center; font-size: 1rem; color: inherit; }
+  .deferred-art { position: relative; background: #161b22; }
+  .deferred-art [hidden] { display: none; }
+  .art-status { position: absolute; top: 0; inset-inline-start: 0; margin: 0; padding: 14px 16px; }
 </style>
-<noscript><style>img[data-src] { display: none; }</style></noscript>
+<noscript><style>.deferred-art { display: none; }</style></noscript>
 </head>
 <body>
 <main>
@@ -23,9 +26,18 @@
   <p class="intro"><strong>Always curious. Always building.</strong><br />
     从一个想法开始，让代码成为下一种可能。</p>
   <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/hero-aurora.svg" width="960" height="780" fetchpriority="high" alt="Always curious. Always building.">
-  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" style="aspect-ratio: 960 / 406" alt="最近更新时间与年度进度">
-  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" style="aspect-ratio: 960 / 400" alt="GitHub 贡献贪吃蛇动画">
-  <img data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/stats-aurora.svg" width="960" height="510" style="aspect-ratio: 960 / 510" alt="公开 GitHub 统计与语言占比">
+  <div class="deferred-art" style="aspect-ratio: 960 / 406">
+    <p class="art-status">加载中 · 最近更新时间与年度进度</p>
+    <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" alt="最近更新时间与年度进度">
+  </div>
+  <div class="deferred-art" style="aspect-ratio: 960 / 400">
+    <p class="art-status">加载中 · GitHub 贡献贪吃蛇动画</p>
+    <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
+  </div>
+  <div class="deferred-art" style="aspect-ratio: 960 / 510">
+    <p class="art-status">加载中 · 公开 GitHub 统计与语言占比</p>
+    <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/stats-aurora.svg" width="960" height="510" alt="公开 GitHub 统计与语言占比">
+  </div>
   <noscript>
     <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/date-aurora.svg" width="960" height="406" alt="最近更新时间与年度进度">
     <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
@@ -33,11 +45,23 @@
   </noscript>
 </main>
 <script>
-  const deferredImages = document.querySelectorAll('img[data-src]');
+  const deferredArt = document.querySelectorAll('.deferred-art');
 
-  function requestImage(image) {
-    image.src = image.dataset.src;
-    delete image.dataset.src;
+  function requestImage(panel) {
+    const image = panel.querySelector('img');
+    const status = panel.querySelector('.art-status');
+    const source = image.dataset.src;
+    image.addEventListener('load', () => {
+      image.hidden = false;
+      status.hidden = true;
+    }, {once: true});
+    image.addEventListener('error', () => {
+      const link = document.createElement('a');
+      link.href = source;
+      link.textContent = '打开原图';
+      status.replaceChildren('图片暂时无法加载 · ', link);
+    }, {once: true});
+    image.src = source;
   }
 
   if ('IntersectionObserver' in window) {
@@ -49,9 +73,9 @@
         }
       }
     });
-    deferredImages.forEach((image) => observer.observe(image));
+    deferredArt.forEach((panel) => observer.observe(panel));
   } else {
-    deferredImages.forEach(requestImage);
+    deferredArt.forEach(requestImage);
   }
 </script>
 </body>
