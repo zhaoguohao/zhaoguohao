@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="墨间，zhaoguohao 的交互水墨习作。">
   <title>墨间 · zhaoguohao</title>
-  <link rel="stylesheet" href="./ink.css?v=flow">
-  <script src="./ink.js?v=flow" defer></script>
+  <link rel="stylesheet" href="./ink.css?v=strokes">
+  <script src="./ink.js?v=strokes" defer></script>
 </head>
 <body>
   <main>
     <section class="hero" id="top" aria-labelledby="title">
       <canvas class="wash" aria-hidden="true"></canvas>
+      <canvas class="strokes" aria-hidden="true"></canvas>
+      <div class="brush-cursor" aria-hidden="true" hidden></div>
       <header class="masthead">
         <a href="../">← 个人站</a>
         <a href="#mountain">山径 ↓</a>
@@ -21,7 +23,7 @@
         <h1 id="title">墨<span>间</span></h1>
         <p class="lede">一滴墨，一段山路。</p>
         <div class="ink-controls" hidden>
-          <p>在纸上轻点或拖动，晕开一滴墨。</p>
+          <p>点按或拖动落笔。笔迹会留下，水墨会慢慢晕开。</p>
           <div class="tools" role="group" aria-label="画笔">
             <button class="swatch" type="button" data-color="ink" aria-label="墨黑" aria-pressed="true"></button>
             <button class="swatch" type="button" data-color="blue" aria-label="靛青" aria-pressed="false"></button>

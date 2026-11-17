@@ -72,7 +72,8 @@ const fragmentSource = `
     float radius = length(bent);
     float strata = field(bent*10.+vec2(t*.12,-t*.08));
     float veins = pow(.5+.5*sin(radius*47.+strata*18.-t*.18), 6.);
-    float cloud = (1.-smoothstep(.22,.68,radius+strata*.17))*ambient;
+    float cloud = (1.-smoothstep(.22,.68,radius+strata*.17))*ambient
+      * mix(.09,1.,smoothstep(.16,.59,uv.x));
     float density = min(.92, cloud*(.23+strata*.70+veins*.40));
     vec3 pigment = mix(vec3(.14,.25,.29), vec3(.35,.48,.48), strata);
     vec3 inked = mix(paper, pigment, density);
@@ -127,8 +128,11 @@ const transportSource = `
 
 function startWash() {
   const canvas = document.querySelector('.wash');
+  const strokes = document.querySelector('.strokes');
+  const pen = strokes.getContext('2d');
+  const cursor = document.querySelector('.brush-cursor');
   const gl = canvas.getContext('webgl', {alpha: false, antialias: false, powerPreference: 'low-power'});
-  if (!gl) return;
+  if (!gl || !pen) return;
   function makeProgram(fragment, names) {
     const program = gl.createProgram();
     for (const [kind, source] of [[gl.VERTEX_SHADER, vertexSource], [gl.FRAGMENT_SHADER, fragment]]) {
@@ -155,11 +159,15 @@ function startWash() {
   const touch = document.getElementById('wash-touch');
   const brush = document.getElementById('wash-size');
   const shades = [[.09,.17,.19], [.18,.31,.55], [.69,.18,.12]];
+  const penColors = ['#27383b', '#38567c', '#a23e30'];
   let color = 0, time = 0, ambient = 1, inkUntil = 0;
   let previous = 0, frame = 0, visible = true, lost = false;
   let flowing = !motion.matches;
   let buffers = [], bufferWidth, bufferHeight;
   let point = null;
+  let pointer = null;
+  let touchStart = null;
+  let hasStrokes = false;
 
   function use(pass, framebuffer, width, height, texture) {
     gl.useProgram(pass.program);
@@ -192,7 +200,6 @@ function startWash() {
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
     inkUntil = 0;
-    point = null;
   }
   function advect(dt, from = [0, 0], to = from, active = 0) {
     const [current, next] = buffers;
@@ -222,6 +229,19 @@ function startWash() {
     const width = Math.max(1, hero.clientWidth), height = Math.max(1, hero.clientHeight);
     const ratio = Math.min(.82, 1000 / width, 720 / height);
     const nextWidth = Math.max(1, Math.round(width * ratio)), nextHeight = Math.max(1, Math.round(height * ratio));
+    const inkScale = Math.min(devicePixelRatio || 1, 1.5, 1800 / width, 1250 / height);
+    const inkWidth = Math.max(1, Math.round(width * inkScale)), inkHeight = Math.max(1, Math.round(height * inkScale));
+    if (strokes.width !== inkWidth || strokes.height !== inkHeight) {
+      const old = hasStrokes ? document.createElement('canvas') : null;
+      if (old) {
+        old.width = strokes.width;
+        old.height = strokes.height;
+        old.getContext('2d').drawImage(strokes, 0, 0);
+      }
+      strokes.width = inkWidth;
+      strokes.height = inkHeight;
+      if (old) pen.drawImage(old, 0, 0, inkWidth, inkHeight);
+    }
     if (buffers.length && canvas.width === nextWidth && canvas.height === nextHeight) return;
     canvas.width = nextWidth;
     canvas.height = nextHeight;
@@ -262,26 +282,81 @@ function startWash() {
       previous = 0;
     }
   }
-  function addDrop(event, continuing = false) {
-    const bounds = hero.getBoundingClientRect();
+  function penWidth(event) {
+    const width = [3, 5, 8, 13, 20][Number(brush.value) - 1];
+    return event.pointerType === 'pen' && event.pressure > 0 ? width * (.55 + .85 * event.pressure) : width;
+  }
+  function drawStroke(from, to, event, bounds) {
+    const scale = strokes.width / bounds.width;
+    pen.lineWidth = penWidth(event) * scale;
+    pen.lineCap = 'round';
+    pen.lineJoin = 'round';
+    pen.strokeStyle = pen.fillStyle = penColors[color];
+    const x = to[0] * strokes.width, y = (1 - to[1]) * strokes.height;
+    pen.beginPath();
+    if (from === to) {
+      pen.arc(x, y, pen.lineWidth / 2, 0, Math.PI * 2);
+      pen.fill();
+    } else {
+      pen.moveTo(from[0] * strokes.width, (1 - from[1]) * strokes.height);
+      pen.lineTo(x, y);
+      pen.stroke();
+    }
+    hasStrokes = true;
+  }
+  function addDrop(event, bounds, continuing = false, stir = true) {
     const next = [(event.clientX - bounds.left) / bounds.width, 1 - (event.clientY - bounds.top) / bounds.height];
     const from = continuing && point ? point : next;
-    advect(flowing ? .016 : 0, from, next, continuing ? .71 : .88);
+    drawStroke(from, next, event, bounds);
+    if (stir) {
+      advect(flowing ? .016 : 0, from, next, continuing ? .63 : .78);
+      inkUntil = time + 12;
+      paint();
+      sync();
+    }
     point = next;
-    inkUntil = time + 12;
-    paint();
-    sync();
   }
+  const overControls = event => Boolean(event.target.closest('button, a, input, label'));
   hero.addEventListener('pointerdown', event => {
-    if (!lost && event.button === 0 && !event.target.closest('button, a, input, label')) addDrop(event);
+    if (lost || event.button !== 0 || pointer !== null || overControls(event)) return;
+    if (event.pointerType === 'touch' && !hero.classList.contains('brush-mode')) {
+      touchStart = {id: event.pointerId, x: event.clientX, y: event.clientY};
+      return;
+    }
+    pointer = event.pointerId;
+    hero.setPointerCapture(pointer);
+    addDrop(event, hero.getBoundingClientRect());
   });
   hero.addEventListener('pointermove', event => {
-    if (lost || !point || !(event.buttons & 1) || event.target.closest('button, a, input, label')) return;
-    if (event.pointerType !== 'touch' || hero.classList.contains('brush-mode')) addDrop(event, true);
+    if (lost) return;
+    const bounds = hero.getBoundingClientRect();
+    cursor.hidden = event.pointerType === 'touch' || overControls(event);
+    if (!cursor.hidden) {
+      cursor.style.left = (event.clientX - bounds.left) + 'px';
+      cursor.style.top = (event.clientY - bounds.top) + 'px';
+      cursor.style.width = cursor.style.height = Math.max(9, penWidth(event)) + 'px';
+    }
+    if (event.pointerId !== pointer || !point) return;
+    const samples = event.getCoalescedEvents?.() || [];
+    for (const sample of samples) addDrop(sample, bounds, true, false);
+    addDrop(event, bounds, true);
   }, {passive: true});
-  for (const event of ['pointerup', 'pointercancel', 'pointerleave']) {
-    hero.addEventListener(event, () => { point = null; });
+  function endStroke(event) {
+    if (event.pointerId === pointer) {
+      if (event.type === 'pointerup' && point) addDrop(event, hero.getBoundingClientRect(), true);
+      pointer = null;
+      point = null;
+    }
+    if (event.pointerId === touchStart?.id) {
+      if (event.type === 'pointerup' && Math.hypot(event.clientX - touchStart.x, event.clientY - touchStart.y) < 10) {
+        addDrop(event, hero.getBoundingClientRect());
+        point = null;
+      }
+      touchStart = null;
+    }
   }
+  for (const kind of ['pointerup', 'pointercancel', 'lostpointercapture']) hero.addEventListener(kind, endStroke);
+  hero.addEventListener('pointerleave', () => { cursor.hidden = true; });
   const palette = [...document.querySelectorAll('.swatch')];
   palette.forEach((button, index) => button.addEventListener('click', () => {
     color = index;
@@ -291,6 +366,9 @@ function startWash() {
     ambient = 0;
     ambientButton.setAttribute('aria-pressed', 'false');
     clearInk();
+    pen.clearRect(0, 0, strokes.width, strokes.height);
+    hasStrokes = false;
+    point = null;
     paint();
     sync();
   });
@@ -310,11 +388,13 @@ function startWash() {
     lost = true;
     canvas.hidden = true;
     controls.hidden = true;
+    cursor.hidden = true;
     sync();
   });
   new ResizeObserver(fit).observe(hero);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }).observe(hero);
   fit();
+  hero.classList.add('ink-ready');
   controls.hidden = false;
   sync();
 }

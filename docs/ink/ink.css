@@ -8,9 +8,12 @@ button { font: inherit; color: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--red); outline-offset: 5px; }
 .hero { min-height: max(680px, 100svh); position: relative; isolation: isolate; overflow: hidden; display: grid; align-items: center; padding: 110px clamp(24px, 9vw, 160px) 130px; background: radial-gradient(ellipse at 73% 44%, #798e8c, #d9d4c6 36%, var(--paper) 71%); }
 .wash { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; pointer-events: none; }
+.strokes { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
 .hero::before { content: ""; position: absolute; z-index: -1; inset: 0; pointer-events: none; background: linear-gradient(90deg, #f2eadbf5 1%, #f2eadbcf 27%, #f2eadb00 68%); }
-.masthead { position: absolute; inset: 0 0 auto; display: flex; justify-content: space-between; padding: 24px clamp(24px, 9vw, 160px); font-size: .875rem; }
-.hero-copy { max-width: 29rem; }
+.hero.ink-ready::before { display: none; }
+.brush-cursor { position: absolute; z-index: 2; border: 1px solid #172a2eb0; border-radius: 50%; box-shadow: 0 0 0 1px #fff8; pointer-events: none; transform: translate(-50%, -50%); }
+.masthead { position: absolute; z-index: 1; inset: 0 0 auto; display: flex; justify-content: space-between; padding: 24px clamp(24px, 9vw, 160px); font-size: .875rem; }
+.hero-copy { position: relative; z-index: 1; max-width: 29rem; }
 .signature { margin: 0 0 16px; color: #843d35; font-family: system-ui, sans-serif; font-size: .8rem; letter-spacing: .18em; }
 h1, h2 { margin: 0; font-weight: 500; }
 h1 { font-size: clamp(5rem, 14vw, 12.5rem); letter-spacing: -.11em; line-height: .98; }
