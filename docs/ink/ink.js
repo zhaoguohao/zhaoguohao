@@ -114,7 +114,7 @@ const transportSource = `
       + texture2D(previousInk,sampleAt + vec2(0.,pixel.y))
       + texture2D(previousInk,sampleAt - vec2(0.,pixel.y))) * .09;
     float edge = smoothstep(0.,.045,min(min(uv.x,1.-uv.x),min(uv.y,1.-uv.y)));
-    before.a = max(0.,before.a - dt*.16) * edge;
+    before.a *= edge;
     vec2 fromStart = p-stroke.xy*aspect;
     float along = clamp(dot(fromStart,delta)/max(dot(delta,delta),.00001),0.,1.);
     float distance = length(fromStart - along*delta);
@@ -201,6 +201,27 @@ function startWash() {
     }
     inkUntil = 0;
   }
+  function settleInk() {
+    if (!inkUntil || !buffers.length) return;
+    const pixels = new Uint8Array(bufferWidth * bufferHeight * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, buffers[0].framebuffer);
+    gl.readPixels(0, 0, bufferWidth, bufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    const stain = document.createElement('canvas');
+    stain.width = bufferWidth;
+    stain.height = bufferHeight;
+    const data = new ImageData(new Uint8ClampedArray(pixels), bufferWidth, bufferHeight);
+    stain.getContext('2d').putImageData(data, 0, 0);
+    // Let the pigment dry behind the sharp brush line instead of deleting it.
+    pen.save();
+    pen.globalCompositeOperation = 'destination-over';
+    pen.globalAlpha = .84;
+    pen.translate(0, strokes.height);
+    pen.scale(strokes.width / bufferWidth, -strokes.height / bufferHeight);
+    pen.drawImage(stain, 0, 0);
+    pen.restore();
+    hasStrokes = true;
+    clearInk();
+  }
   function advect(dt, from = [0, 0], to = from, active = 0) {
     const [current, next] = buffers;
     const uniforms = use(transport, next.framebuffer, bufferWidth, bufferHeight, current.texture);
@@ -231,6 +252,7 @@ function startWash() {
     const nextWidth = Math.max(1, Math.round(width * ratio)), nextHeight = Math.max(1, Math.round(height * ratio));
     const inkScale = Math.min(devicePixelRatio || 1, 1.5, 1800 / width, 1250 / height);
     const inkWidth = Math.max(1, Math.round(width * inkScale)), inkHeight = Math.max(1, Math.round(height * inkScale));
+    if (buffers.length && (canvas.width !== nextWidth || canvas.height !== nextHeight)) settleInk();
     if (strokes.width !== inkWidth || strokes.height !== inkHeight) {
       const old = hasStrokes ? document.createElement('canvas') : null;
       if (old) {
@@ -261,7 +283,7 @@ function startWash() {
     time += dt;
     if (time < inkUntil) advect(dt);
     else if (inkUntil) {
-      clearInk();
+      settleInk();
       if (!ambient) {
         paint();
         sync();
@@ -310,7 +332,7 @@ function startWash() {
     drawStroke(from, next, event, bounds);
     if (stir) {
       advect(flowing ? .016 : 0, from, next, continuing ? .63 : .78);
-      inkUntil = time + 12;
+      inkUntil = time + 1.8;
       paint();
       sync();
     }
