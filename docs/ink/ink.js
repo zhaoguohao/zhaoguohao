@@ -159,7 +159,6 @@ function startWash() {
   const touch = document.getElementById('wash-touch');
   const brush = document.getElementById('wash-size');
   const shades = [[.09,.17,.19], [.18,.31,.55], [.69,.18,.12]];
-  const penColors = ['#27383b', '#38567c', '#a23e30'];
   let color = 0, time = 0, ambient = 1, inkUntil = 0;
   let previous = 0, frame = 0, visible = true, lost = false;
   let flowing = !motion.matches;
@@ -211,7 +210,7 @@ function startWash() {
     stain.height = bufferHeight;
     const data = new ImageData(new Uint8ClampedArray(pixels), bufferWidth, bufferHeight);
     stain.getContext('2d').putImageData(data, 0, 0);
-    // Let the pigment dry behind the sharp brush line instead of deleting it.
+    // Keep the diffused pigment on the paper after it stops moving.
     pen.save();
     pen.globalCompositeOperation = 'destination-over';
     pen.globalAlpha = .84;
@@ -308,34 +307,13 @@ function startWash() {
     const width = [3, 5, 8, 13, 20][Number(brush.value) - 1];
     return event.pointerType === 'pen' && event.pressure > 0 ? width * (.55 + .85 * event.pressure) : width;
   }
-  function drawStroke(from, to, event, bounds) {
-    const scale = strokes.width / bounds.width;
-    pen.lineWidth = penWidth(event) * scale;
-    pen.lineCap = 'round';
-    pen.lineJoin = 'round';
-    pen.strokeStyle = pen.fillStyle = penColors[color];
-    const x = to[0] * strokes.width, y = (1 - to[1]) * strokes.height;
-    pen.beginPath();
-    if (from === to) {
-      pen.arc(x, y, pen.lineWidth / 2, 0, Math.PI * 2);
-      pen.fill();
-    } else {
-      pen.moveTo(from[0] * strokes.width, (1 - from[1]) * strokes.height);
-      pen.lineTo(x, y);
-      pen.stroke();
-    }
-    hasStrokes = true;
-  }
-  function addDrop(event, bounds, continuing = false, stir = true) {
+  function addDrop(event, bounds, continuing = false) {
     const next = [(event.clientX - bounds.left) / bounds.width, 1 - (event.clientY - bounds.top) / bounds.height];
     const from = continuing && point ? point : next;
-    drawStroke(from, next, event, bounds);
-    if (stir) {
-      advect(flowing ? .016 : 0, from, next, continuing ? .63 : .78);
-      inkUntil = time + 1.8;
-      paint();
-      sync();
-    }
+    advect(flowing ? .016 : 0, from, next, continuing ? .63 : .78);
+    inkUntil = time + 1.8;
+    paint();
+    sync();
     point = next;
   }
   const overControls = event => Boolean(event.target.closest('button, a, input, label'));
@@ -359,8 +337,6 @@ function startWash() {
       cursor.style.width = cursor.style.height = Math.max(9, penWidth(event)) + 'px';
     }
     if (event.pointerId !== pointer || !point) return;
-    const samples = event.getCoalescedEvents?.() || [];
-    for (const sample of samples) addDrop(sample, bounds, true, false);
     addDrop(event, bounds, true);
   }, {passive: true});
   function endStroke(event) {
