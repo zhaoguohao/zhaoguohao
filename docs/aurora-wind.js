@@ -5,6 +5,7 @@ export function startWind() {
   const controls = document.querySelector('.wind-controls');
   const gustButton = document.getElementById('gust');
   const toggle = document.getElementById('toggle-motion');
+  const stillSerpent = document.querySelector('#snake source[media]');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   if (!context) return;
 
@@ -104,8 +105,16 @@ export function startWind() {
   }, {passive: true});
   stage.addEventListener('pointerleave', () => { pointer.active = false; });
   gustButton.addEventListener('click', () => { gust = 210; });
-  toggle.addEventListener('click', () => { enabled = !enabled; sync(); });
-  reducedMotion.addEventListener('change', (event) => { enabled = !event.matches; sync(); });
+  toggle.addEventListener('click', () => {
+    enabled = !enabled;
+    stillSerpent.media = enabled ? 'not all' : 'all';
+    sync();
+  });
+  reducedMotion.addEventListener('change', event => {
+    enabled = !event.matches;
+    stillSerpent.media = reducedMotion.media;
+    sync();
+  });
   document.addEventListener('visibilitychange', sync);
   new ResizeObserver(resize).observe(stage);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }).observe(stage);

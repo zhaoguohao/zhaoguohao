@@ -244,6 +244,7 @@
   });
   const arrows = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
   chart.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     const delta = arrows[event.key];
     if (!delta) return;
     event.preventDefault();

@@ -66,6 +66,7 @@
         row.forEach(item => { item.tabIndex = item === button ? 0 : -1; });
       });
       button.addEventListener('keydown', event => {
+        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
         if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)) return;
         event.preventDefault();
         let nextStep = step, nextVoice = voice;

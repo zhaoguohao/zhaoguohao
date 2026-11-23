@@ -185,7 +185,9 @@ export function startIsland() {
   const display = mesh(new THREE.PlaneGeometry(18.1, 18.1 * 9 / 16), screenMaterial, 0, 8.7, .48, screen);
   const videoTexture = new THREE.VideoTexture(video);
   videoTexture.colorSpace = THREE.SRGBColorSpace;
-  let wantsPlayback = true;
+  const motion = matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = motion.matches;
+  let playbackChoice = null;
   let playRequest = null;
   let contextLost = false;
   video.addEventListener('playing', () => {
@@ -202,8 +204,14 @@ export function startIsland() {
     toggleVideo.textContent = '重试播放';
     toggleVideo.setAttribute('aria-pressed', 'false');
   });
-  async function playScreen() {
-    if (playRequest || !wantsPlayback || document.hidden || contextLost) return;
+  async function syncScreen() {
+    const shouldPlay = playbackChoice ?? !reducedMotion;
+    if (!shouldPlay || document.hidden || contextLost) {
+      playRequest = null;
+      video.pause();
+      return;
+    }
+    if (playRequest || (!video.paused && !video.error)) return;
     video.muted = true;
     if (!video.getAttribute('src') || video.error) video.src = video.dataset.src;
     const request = video.play();
@@ -212,16 +220,15 @@ export function startIsland() {
     catch { if (playRequest === request && !video.error) toggleVideo.textContent = '播放大屏'; }
     finally { if (playRequest === request) playRequest = null; }
   }
-  function pauseScreen() {
-    playRequest = null;
-    video.pause();
-  }
   function toggleScreen() {
     if (contextLost) return;
-    wantsPlayback = (video.paused || Boolean(video.error)) && !playRequest;
-    if (wantsPlayback) playScreen();
-    else pauseScreen();
+    playbackChoice = (video.paused || Boolean(video.error)) && !playRequest;
+    syncScreen();
   }
+  motion.addEventListener('change', event => {
+    reducedMotion = event.matches;
+    syncScreen();
+  });
   toggleVideo.addEventListener('click', toggleScreen);
   const cursor = new THREE.Vector2();
   const ray = new THREE.Raycaster();
@@ -324,7 +331,6 @@ export function startIsland() {
 
   const keyboard = new Set();
   const touches = new Map();
-  const motion = matchMedia('(prefers-reduced-motion: reduce)');
   let velocity = 0, yaw = 0, nearby = -1;
   let previous = 0, animation = 0, overview = false;
   const cameraButton = document.getElementById('camera-toggle');
@@ -378,7 +384,7 @@ export function startIsland() {
         visit.textContent = '打开' + stops[current].name + ' ↗';
       }
     }
-    if (!motion.matches) {
+    if (!reducedMotion) {
       for (const [i, item] of beacons.entries()) {
         item.rotation.y = time * .001;
         item.position.y = 5.25 + Math.sin(time * .0018 + i) * .34;
@@ -392,7 +398,7 @@ export function startIsland() {
     if (overview) view.set(target.x + 31, 47, target.z + 42);
     else view.set(target.x + 10, 20, target.z + 39);
     if (camera.aspect < .95) view.sub(target).multiplyScalar(1.45).add(target);
-    if (dt && !motion.matches) camera.position.lerp(view, 1 - Math.exp(-dt * 5));
+    if (dt && !reducedMotion) camera.position.lerp(view, 1 - Math.exp(-dt * 5));
     else camera.position.copy(view);
     camera.lookAt(target);
     composer.render();
@@ -400,7 +406,7 @@ export function startIsland() {
   }
 
   window.addEventListener('keydown', event => {
-    if (contextLost || document.hidden) return;
+    if (contextLost || document.hidden || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.code === 'Enter' && nearby >= 0 && event.target === document.body) visit.click();
     if (inputCodes[event.code] && !['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
       event.preventDefault();
@@ -414,12 +420,8 @@ export function startIsland() {
     keyboard.clear();
     touches.clear();
     previous = 0;
-    if (document.hidden || contextLost) {
-      pauseScreen();
-      return;
-    }
-    animation = requestAnimationFrame(draw);
-    if (wantsPlayback) playScreen();
+    if (!document.hidden && !contextLost) animation = requestAnimationFrame(draw);
+    syncScreen();
   }
   document.addEventListener('visibilitychange', syncScene);
   for (const button of document.querySelectorAll('[data-key]')) {
@@ -454,5 +456,5 @@ export function startIsland() {
   document.querySelector('.controls').hidden = false;
   document.querySelector('.drive-pad').hidden = false;
   status.hidden = true;
-  requestAnimationFrame(() => { if (wantsPlayback) playScreen(); });
+  requestAnimationFrame(syncScreen);
 }

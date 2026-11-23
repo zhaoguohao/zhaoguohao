@@ -180,7 +180,17 @@ def snake_panel():
     snake.set('y', '184')
     snake.set('width', '880')
     snake.set('height', '192')
-    return header.replace('</svg>', ET.tostring(snake, encoding='unicode') + '</svg>')
+    # An SVG embedded with <img> has its own styles. Fragments let the page's
+    # motion button override the system preference without a second asset.
+    snake.set('id', 'serpent-pause')
+    artwork = ET.Element(ns + 'g', {'id': 'serpent-play'})
+    artwork.append(snake)
+    ET.SubElement(artwork, ns + 'style').text = (
+        '@media (prefers-reduced-motion:reduce){#serpent-pause *{animation-play-state:paused}}'
+        '#serpent-pause:target *{animation-play-state:paused}'
+        '#serpent-play:target *{animation-play-state:running}'
+    )
+    return header.replace('</svg>', ET.tostring(artwork, encoding='unicode') + '</svg>')
 
 
 def stats_panel(data):

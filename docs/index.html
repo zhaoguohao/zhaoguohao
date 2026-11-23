@@ -49,6 +49,10 @@
   .intro { text-align: center; font-size: 1rem; color: inherit; }
   .site-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 12px; min-height: 44px; }
   .site-links { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; font-size: .78rem; }
+  .site-links a { display: inline-flex; align-items: center; min-height: 24px; }
+  @media (any-pointer: coarse) {
+    .site-links a { min-height: 44px; min-width: 44px; }
+  }
   .site-header a, .wind-controls button { white-space: nowrap; }
   .wind-controls { display: flex; gap: 8px; }
   .wind-controls[hidden] { display: none; }
@@ -67,6 +71,7 @@
   .scroll-next { justify-self: center; padding: 9px 14px; color: #a6c7ed; font-size: .8rem; text-decoration: none; }
   .scroll-next:hover { text-decoration: underline; }
   .deferred-art { position: relative; background: #161b22; }
+  .deferred-art picture { display: block; }
   .deferred-art [hidden] { display: none; }
   .art-status { position: absolute; top: 0; inset-inline-start: 0; margin: 0; padding: 14px 16px; }
 </style>
@@ -105,8 +110,14 @@
   </div>
   <div id="snake" class="deferred-art" style="aspect-ratio: 960 / 400">
     <p class="art-status">加载中 · GitHub 贡献贪吃蛇动画</p>
-    <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
-    <noscript><img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg" width="960" height="400" alt="GitHub 贡献贪吃蛇动画"></noscript>
+    <picture>
+      <source media="(prefers-reduced-motion: reduce)" data-srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-pause">
+      <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-play" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
+    </picture>
+    <noscript><picture>
+      <source media="(prefers-reduced-motion: reduce)" srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-pause">
+      <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-play" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
+    </picture></noscript>
   </div>
   <div id="stats" class="deferred-art" style="aspect-ratio: 960 / 510">
     <p class="art-status">加载中 · 公开 GitHub 统计与语言占比</p>
@@ -142,18 +153,20 @@
   function requestImage(panel) {
     const image = panel.querySelector('img');
     const status = panel.querySelector('.art-status');
-    const source = image.dataset.src;
     image.addEventListener('load', () => {
       image.hidden = false;
       status.hidden = true;
-    }, {once: true});
+    });
     image.addEventListener('error', () => {
       const link = document.createElement('a');
-      link.href = source;
+      link.href = image.currentSrc || image.src;
       link.textContent = '打开原图';
       status.replaceChildren('图片暂时无法加载 · ', link);
-    }, {once: true});
-    image.src = source;
+      image.hidden = true;
+      status.hidden = false;
+    });
+    for (const source of panel.querySelectorAll('source[data-srcset]')) source.srcset = source.dataset.srcset;
+    image.src = image.dataset.src;
   }
 
   const hero = document.getElementById('hero-art');
@@ -188,7 +201,7 @@
   }
 
   hero.decode()
-    .then(() => import('./aurora-wind.js'))
+    .then(() => import('./aurora-wind.js?v=art-motion'))
     .then(({startWind}) => startWind())
     .catch(() => {});
 </script>

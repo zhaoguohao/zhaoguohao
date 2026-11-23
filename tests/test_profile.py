@@ -1,4 +1,5 @@
 import sys, unittest
+import re
 from pathlib import Path
 from datetime import datetime, timezone
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
@@ -30,4 +31,13 @@ class ProfileTests(unittest.TestCase):
   self.assertEqual(len(list(result.iter(ns + 'linearGradient'))), 1)
  def test_snake_render_is_repeatable(self):
   self.assertEqual(snake_panel(), snake_panel())
+ def test_homepage_motion_links_resolve_in_generated_snake(self):
+  page = (ROOT / 'docs/index.html').read_text(encoding='utf-8')
+  fragments = set(re.findall(r'contributions-serpent\.svg[^"#]*#([\w-]+)', page))
+  self.assertEqual(fragments, {'serpent-play', 'serpent-pause'})
+  artwork = ET.fromstring(snake_panel())
+  styles = ''.join(node.text or '' for node in artwork.iter('{http://www.w3.org/2000/svg}style'))
+  for fragment in fragments:
+   self.assertIsNotNone(artwork.find(f".//*[@id='{fragment}']"))
+   self.assertIn(f'#{fragment}:target', styles)
 if __name__=='__main__': unittest.main()
