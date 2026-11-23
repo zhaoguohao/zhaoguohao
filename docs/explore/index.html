@@ -47,7 +47,7 @@
   <script type="module">
     const status = document.getElementById('status');
     status.textContent = '正在加载岛屿…';
-    import('./island.js?v=nightport').then(({startIsland}) => startIsland()).catch(() => {
+    import('./island.js?v=scene-recovery').then(({startIsland}) => startIsland()).catch(() => {
       status.textContent = '3D 场景暂时无法打开，可以直接访问上方的站点。';
     });
   </script>

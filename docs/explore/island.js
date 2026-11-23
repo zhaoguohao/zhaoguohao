@@ -21,6 +21,7 @@ export function startIsland() {
   const canvas = document.getElementById('island');
   const status = document.getElementById('status');
   const visit = document.getElementById('visit');
+  const driveUi = document.querySelector('.drive-ui');
   const links = [...document.querySelectorAll('[data-stop]')];
   const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreference: 'low-power'});
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
@@ -185,7 +186,8 @@ export function startIsland() {
   const videoTexture = new THREE.VideoTexture(video);
   videoTexture.colorSpace = THREE.SRGBColorSpace;
   let wantsPlayback = true;
-  let playPending = false;
+  let playRequest = null;
+  let contextLost = false;
   video.addEventListener('playing', () => {
     screenMaterial.map = videoTexture;
     toggleVideo.textContent = '暂停大屏';
@@ -198,20 +200,27 @@ export function startIsland() {
   video.addEventListener('error', () => {
     screenMaterial.map = poster;
     toggleVideo.textContent = '重试播放';
+    toggleVideo.setAttribute('aria-pressed', 'false');
   });
   async function playScreen() {
-    if (playPending || document.hidden) return;
-    playPending = true;
+    if (playRequest || !wantsPlayback || document.hidden || contextLost) return;
     video.muted = true;
     if (!video.getAttribute('src') || video.error) video.src = video.dataset.src;
-    try { await video.play(); }
-    catch { toggleVideo.textContent = '播放大屏'; }
-    finally { playPending = false; }
+    const request = video.play();
+    playRequest = request;
+    try { await request; }
+    catch { if (playRequest === request && !video.error) toggleVideo.textContent = '播放大屏'; }
+    finally { if (playRequest === request) playRequest = null; }
+  }
+  function pauseScreen() {
+    playRequest = null;
+    video.pause();
   }
   function toggleScreen() {
-    wantsPlayback = video.paused && !playPending;
+    if (contextLost) return;
+    wantsPlayback = (video.paused || Boolean(video.error)) && !playRequest;
     if (wantsPlayback) playScreen();
-    else video.pause();
+    else pauseScreen();
   }
   toggleVideo.addEventListener('click', toggleScreen);
   const cursor = new THREE.Vector2();
@@ -332,6 +341,7 @@ export function startIsland() {
     return keyboard.has(key) || [...touches.values()].includes(key);
   }
   function fit() {
+    if (contextLost) return;
     const {clientWidth: width, clientHeight: height} = canvas;
     camera.aspect = width / Math.max(1, height);
     camera.fov = camera.aspect < .95 ? 56 : 43;
@@ -390,6 +400,7 @@ export function startIsland() {
   }
 
   window.addEventListener('keydown', event => {
+    if (contextLost || document.hidden) return;
     if (event.code === 'Enter' && nearby >= 0 && event.target === document.body) visit.click();
     if (inputCodes[event.code] && !['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) {
       event.preventDefault();
@@ -398,17 +409,19 @@ export function startIsland() {
   });
   window.addEventListener('keyup', event => { keyboard.delete(inputCodes[event.code]); });
   window.addEventListener('blur', () => { keyboard.clear(); touches.clear(); });
-  document.addEventListener('visibilitychange', () => {
+  function syncScene() {
     cancelAnimationFrame(animation);
-    if (document.hidden) video.pause();
     keyboard.clear();
     touches.clear();
     previous = 0;
-    if (!document.hidden) {
-      animation = requestAnimationFrame(draw);
-      if (wantsPlayback) playScreen();
+    if (document.hidden || contextLost) {
+      pauseScreen();
+      return;
     }
-  });
+    animation = requestAnimationFrame(draw);
+    if (wantsPlayback) playScreen();
+  }
+  document.addEventListener('visibilitychange', syncScene);
   for (const button of document.querySelectorAll('[data-key]')) {
     button.addEventListener('pointerdown', event => {
       event.preventDefault();
@@ -422,9 +435,18 @@ export function startIsland() {
   document.getElementById('reset').addEventListener('click', reset);
   canvas.addEventListener('webglcontextlost', event => {
     event.preventDefault();
-    cancelAnimationFrame(animation);
+    contextLost = true;
+    syncScene();
+    driveUi.hidden = true;
     status.hidden = false;
-    status.textContent = '3D 画面已暂停。可以刷新重试，或直接打开站点链接。';
+    status.textContent = '3D 画面暂时中断，可先访问上方站点或刷新重试。';
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    contextLost = false;
+    fit();
+    driveUi.hidden = false;
+    status.hidden = true;
+    syncScene();
   });
   new ResizeObserver(fit).observe(canvas);
   fit();

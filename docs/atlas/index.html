@@ -1,15 +1,20 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="static-atlas">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="一份会随潮位改变的群岛图。测读高程，沿剖面观察海陆交界。">
   <title>潮汐图室 · Aurora</title>
-  <link rel="stylesheet" href="./atlas.css">
-  <noscript><style>.bench { display: none; } .spread { grid-template-columns: 1fr; }</style></noscript>
+  <link rel="stylesheet" href="./atlas.css?v=survey-point">
+  <script>
+    document.documentElement.classList.replace('static-atlas', 'atlas-loading');
+    document.addEventListener('DOMContentLoaded', () => {
+      document.documentElement.classList.replace('atlas-loading', 'static-atlas');
+    }, {once: true});
+  </script>
   <script defer src="./vendor/d3-array-3.2.4.min.js"></script>
   <script defer src="./vendor/d3-contour-4.0.2.min.js"></script>
-  <script defer src="./atlas.js"></script>
+  <script defer src="./atlas.js?v=survey-point"></script>
 </head>
 <body>
 <div class="folio">
@@ -21,13 +26,13 @@
         <figcaption><strong id="island-name">岬湾群岛</strong><span id="sheet">图幅 0427</span></figcaption>
         <div class="map-window">
           <canvas id="terrain" width="960" height="640" tabindex="0" aria-label="群岛地形测点，点选位置或用方向键移动" aria-describedby="map-help"></canvas>
-          <noscript><img class="print" src="./first-chart.webp" width="720" height="480" alt="岬湾群岛在零米潮位时的等高线海图"></noscript>
+          <img class="print" src="./first-chart.webp" loading="lazy" width="720" height="480" alt="岬湾群岛在零米潮位时的等高线海图">
           <div class="sight" hidden><i></i></div>
           <div class="compass" aria-hidden="true">N<b></b></div>
           <div class="scale" aria-hidden="true"><span>2 km</span></div>
         </div>
         <div class="map-key"><span><i class="water"></i>海床</span><span><i class="shore"></i>潮岸</span><span><i class="ridge"></i>高地</span><small>等高距 10 m</small></div>
-        <noscript><p class="help">当前展示零米潮位的海图。启用 JavaScript 后可以测图和调节潮位。</p></noscript>
+        <p class="help print-note">互动测绘暂不可用，当前展示图幅 0427 在零米潮位的静态海图。</p>
       </figure>
       <aside class="bench" aria-label="测绘工具">
         <div class="tide-block">
@@ -44,7 +49,7 @@
           <output class="reading" id="reading" aria-live="polite">待测点</output>
         </div>
         <button id="redraw" type="button" disabled>换一座岛 <span aria-hidden="true">↻</span></button>
-        <p class="help" id="map-help">点图或用方向键移动测点。当前图幅和潮位可用地址栏链接分享。</p>
+        <p class="help" id="map-help">点图或用方向键移动测点。分享地址栏链接，即可打开相同图幅、潮位和测点。</p>
       </aside>
     </div>
   </main>

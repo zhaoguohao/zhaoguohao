@@ -163,7 +163,7 @@
     session = null;
     clearInterval(run.timer);
     cancelAnimationFrame(run.frame);
-    if (run.output) {
+    if (run.output && audio.state === 'running') {
       const now = audio.currentTime;
       run.output.gain.setTargetAtTime(.0001, now, .002);
       setTimeout(() => {
@@ -171,26 +171,45 @@
         suspendIfIdle();
       }, 35);
     } else {
+      run.output?.disconnect();
       suspendIfIdle();
     }
     needle.hidden = true;
     position.textContent = '16 STEPS';
     setTransport(false);
   }
+  function onAudioState(event) {
+    const context = event.currentTarget;
+    if (context !== audio) return;
+    if (context.state === 'running') {
+      suspendIfIdle();
+    } else if (session && (session.output || context.state === 'interrupted' || context.state === 'closed')) {
+      stopForInterruption();
+    }
+  }
+  function stopForInterruption() {
+    stop();
+    message.textContent = '声音已中断，点按“播放节奏”可重新播放当前谱面。';
+  }
   async function start() {
     const run = {upcoming:[], step:0};
     session = run;
-    setTransport(true);
+    play.querySelector('span').textContent = '取消启动';
     message.textContent = '';
     try {
-      if (!audio) audio = new AudioEngine();
+      if (!audio || audio.state === 'closed') {
+        audio = new AudioEngine();
+        audio.addEventListener('statechange', onAudioState);
+      }
       await audio.resume();
       if (session !== run) { suspendIfIdle(); return; }
       if (document.hidden) { stop(); return; }
+      if (audio.state !== 'running') { stopForInterruption(); return; }
       run.output = audio.createGain();
       run.output.gain.value = .57;
       run.output.connect(audio.destination);
       run.time = audio.currentTime + .035;
+      setTransport(true);
       schedule(run);
       run.timer = setInterval(() => schedule(run), 25);
       showPlayhead(run);

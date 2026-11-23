@@ -4,18 +4,9 @@
   const tideInput = document.getElementById('tide');
   const newChart = document.getElementById('redraw');
   const sight = document.querySelector('.sight');
-  const help = document.getElementById('map-help');
   const mapContext = chart.getContext('2d');
   const profileContext = profile.getContext('2d');
-  if (!mapContext || !profileContext || !window.d3?.contours) {
-    const print = new Image();
-    print.className = 'print';
-    print.alt = '岬湾群岛静态海图';
-    print.src = './first-chart.webp';
-    chart.replaceWith(print);
-    help.textContent = '当前显示静态海图。';
-    return;
-  }
+  if (!mapContext || !profileContext || !window.d3?.contours) return;
 
   const columns = 192, rows = 128;
   const params = new URLSearchParams(location.search);
@@ -23,7 +14,13 @@
   let seed = /^\d{1,4}$/.test(seedParam) ? Number(seedParam) : 427;
   const tideParam = Number(params.get('tide'));
   let tide = Number.isFinite(tideParam) && tideParam >= -50 && tideParam <= 80 && tideParam % 10 === 0 ? tideParam : 0;
-  let probe = {x: 94, y: 68};
+  const probe = {x: 94, y: 68};
+  const savedPoint = /^(\d{1,3}),(\d{1,3})$/.exec(params.get('point') || '');
+  if (savedPoint) {
+    const x = Number(savedPoint[1]), y = Number(savedPoint[2]);
+    if (x < columns && y < rows) { probe.x = x; probe.y = y; }
+  }
+  let pointEdited = false;
   let heights, layers, summit, relief;
   let frame = 0;
   const signed = value => value > 0 ? '+' + value : String(value).replace('-', '−');
@@ -210,7 +207,9 @@
     const url = new URL(location.href);
     url.searchParams.set('seed', seed);
     url.searchParams.set('tide', tide);
-    history.replaceState(null, '', url);
+    url.searchParams.set('point', probe.x + ',' + probe.y);
+    if (url.href !== location.href) history.replaceState(history.state, '', url);
+    pointEdited = false;
   }
   function setTide() {
     tide = Number(tideInput.value);
@@ -226,21 +225,32 @@
     requestDraw();
     saveView();
   });
+  function moveProbe(x, y) {
+    x = limit(x, 0, columns-1);
+    y = limit(y, 0, rows-1);
+    if (probe.x === x && probe.y === y) return;
+    probe.x = x;
+    probe.y = y;
+    pointEdited = true;
+    drawSection();
+  }
+  function saveProbe() {
+    if (pointEdited) saveView();
+  }
   chart.addEventListener('click', event => {
     const r = chart.getBoundingClientRect();
-    probe.x = limit(Math.floor((event.clientX-r.left)/r.width*columns), 0, columns-1);
-    probe.y = limit(Math.floor((event.clientY-r.top)/r.height*rows), 0, rows-1);
-    drawSection();
+    moveProbe(Math.floor((event.clientX-r.left)/r.width*columns), Math.floor((event.clientY-r.top)/r.height*rows));
+    saveProbe();
   });
   const arrows = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
   chart.addEventListener('keydown', event => {
     const delta = arrows[event.key];
     if (!delta) return;
     event.preventDefault();
-    probe.x = limit(probe.x+delta[0],0,columns-1);
-    probe.y = limit(probe.y+delta[1],0,rows-1);
-    drawSection();
+    moveProbe(probe.x+delta[0], probe.y+delta[1]);
   });
+  chart.addEventListener('keyup', saveProbe);
+  chart.addEventListener('blur', saveProbe);
   createTerrain();
   tideInput.value = tide;
   setTide();
@@ -248,4 +258,5 @@
   const resize = new ResizeObserver(requestDraw);
   resize.observe(chart);
   resize.observe(profile);
+  document.documentElement.classList.remove('atlas-loading', 'static-atlas');
 })();

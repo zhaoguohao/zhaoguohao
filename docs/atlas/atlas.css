@@ -21,6 +21,10 @@ figcaption span, .range-ends, .map-key small, .scale, .compass { font-family: "I
 figcaption span { font-size: .79rem; letter-spacing: .045em; }
 .map-window { position: relative; aspect-ratio: 3 / 2; border: 1px solid var(--ink); background: #407b82; isolation: isolate; }
 #terrain, .print { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.print, .print-note { display: none; }
+.static-atlas .spread { grid-template-columns: 1fr; }
+.static-atlas #terrain, .static-atlas .bench { display: none; }
+.static-atlas .print, .static-atlas .print-note { display: block; }
 #terrain { cursor: crosshair; touch-action: manipulation; }
 .sight { pointer-events: none; position: absolute; top: var(--north); left: 0; right: 0; border-top: 1px dashed #fff4d2cc; filter: drop-shadow(0 1px 0 #384a45b3); }
 .sight i { position: absolute; left: var(--east); width: 13px; height: 13px; border: 2px solid #fff7e5; border-radius: 50%; background: #ad4932; transform: translate(-50%, -50%); }
