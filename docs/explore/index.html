@@ -5,45 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="驾驶巡游车探索 zhaoguohao 的 3D 极光夜港。">
   <title>极光夜港 · zhaoguohao</title>
-  <link rel="stylesheet" href="./island.css?v=nightport">
+  <link rel="stylesheet" href="./island.css?v=drive-layout">
   <script type="importmap">
     {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"}}
   </script>
 </head>
 <body>
-  <a class="back" href="../">← 返回个人站</a>
   <main>
     <canvas id="island" aria-label="3D 极光夜港，使用方向键或屏幕按钮驾驶小车"></canvas>
-    <section class="intro">
-      <h1>极光夜港</h1>
-      <p>沿着霓虹车道探索，或停在大屏前看黑洞吸积盘。</p>
-    </section>
-    <nav class="map" aria-label="岛上站点">
-      <a href="https://github.com/zhaoguohao/EZ-Replay-ManagerProject" data-stop="0"><span></span>Unity 工坊</a>
-      <a href="../#snake" data-stop="1"><span></span>贪吃蛇观测站</a>
-      <a href="../#timeline" data-stop="2"><span></span>时间灯塔</a>
-      <p class="film-credit"><a href="https://svs.gsfc.nasa.gov/13326/">黑洞可视化 · NASA Goddard<br>Jeremy Schnittman</a></p>
-    </nav>
-    <p class="status" id="status" role="status">正在加载岛屿…</p>
-    <noscript><p class="status">启用 JavaScript 后可驾驶，仍可使用站点链接。</p></noscript>
-    <div class="controls" hidden>
-      <span class="keys">WASD / 方向键驾驶 · Shift 加速 · Enter 打开站点</span>
-      <button id="billboard-toggle" type="button" aria-pressed="false">播放大屏</button>
-      <button id="camera-toggle" type="button">俯瞰</button>
-      <button id="reset" type="button">回到起点</button>
-    </div>
+    <header class="scene-header">
+      <a class="back" href="../">← 返回个人站</a>
+      <div class="intro">
+        <h1>极光夜港</h1>
+        <p>沿着霓虹车道探索，或停在大屏前看黑洞吸积盘。</p>
+      </div>
+      <nav class="map" aria-label="岛上站点">
+        <a href="https://github.com/zhaoguohao/EZ-Replay-ManagerProject" data-stop="0"><span></span>Unity 工坊</a>
+        <a href="../#snake" data-stop="1"><span></span>贪吃蛇观测站</a>
+        <a href="../#timeline" data-stop="2"><span></span>时间灯塔</a>
+        <p class="film-credit"><a href="https://svs.gsfc.nasa.gov/13326/">黑洞可视化 · NASA Goddard<br>Jeremy Schnittman</a></p>
+      </nav>
+    </header>
+    <p class="status" id="status" role="status"><noscript>启用 JavaScript 后可驾驶，仍可使用站点链接。</noscript></p>
     <video id="billboard-video" muted playsinline loop preload="none" data-src="./black-hole-loop.mp4" hidden></video>
-    <div class="drive-pad" aria-label="驾驶方向" hidden>
-      <button type="button" data-key="ArrowUp" aria-label="前进">↑</button>
-      <button type="button" data-key="ArrowLeft" aria-label="左转">←</button>
-      <button type="button" data-key="ArrowDown" aria-label="倒车">↓</button>
-      <button type="button" data-key="ArrowRight" aria-label="右转">→</button>
+    <div class="drive-ui">
+      <a id="visit" hidden></a>
+      <div class="controls" hidden>
+        <span class="keys">WASD / 方向键驾驶 · Shift 加速 · Enter 打开站点</span>
+        <button id="billboard-toggle" type="button" aria-pressed="false">播放大屏</button>
+        <button id="camera-toggle" type="button">俯瞰</button>
+        <button id="reset" type="button">回到起点</button>
+      </div>
+      <div class="drive-pad" aria-label="驾驶方向" hidden>
+        <button type="button" data-key="ArrowUp" aria-label="前进">↑</button>
+        <button type="button" data-key="ArrowLeft" aria-label="左转">←</button>
+        <button type="button" data-key="ArrowDown" aria-label="倒车">↓</button>
+        <button type="button" data-key="ArrowRight" aria-label="右转">→</button>
+      </div>
     </div>
-    <a id="visit" hidden></a>
   </main>
   <script type="module">
+    const status = document.getElementById('status');
+    status.textContent = '正在加载岛屿…';
     import('./island.js?v=nightport').then(({startIsland}) => startIsland()).catch(() => {
-      document.getElementById('status').textContent = '3D 场景暂时无法打开，可以直接访问上方的站点。';
+      status.textContent = '3D 场景暂时无法打开，可以直接访问上方的站点。';
     });
   </script>
 </body>

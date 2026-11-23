@@ -9,11 +9,16 @@ a { color: #e8f8ff; text-decoration: none; }
 button { font: inherit; color: inherit; cursor: pointer; }
 a:hover, button:hover { color: #9bf6d9; }
 :focus-visible { outline: 2px solid #a5ffe3; outline-offset: 4px; }
-.back { position: absolute; z-index: 1; top: 20px; left: 24px; padding: 9px 13px; border-radius: 10px; font-size: .85rem; }
-.intro { position: absolute; top: 72px; left: 24px; pointer-events: none; text-shadow: 0 2px 18px #050b16; }
+.scene-header {
+  position: absolute; inset: 20px 24px auto; display: grid;
+  grid-template: "back map" auto "intro map" 1fr / minmax(0, 1fr) auto;
+  gap: 12px; align-items: start; justify-items: start; pointer-events: none;
+}
+.back { grid-area: back; pointer-events: auto; padding: 9px 13px; border-radius: 10px; font-size: .85rem; }
+.intro { grid-area: intro; text-shadow: 0 2px 18px #050b16; }
 h1 { margin: 0; font-size: clamp(2.35rem, 5vw, 5rem); letter-spacing: -.04em; line-height: 1.08; }
 .intro p { margin: 9px 0; color: #c1dbe6; font-size: .9rem; }
-.map { position: absolute; right: 24px; top: 20px; border-radius: 14px; padding: 8px; }
+.map { grid-area: map; pointer-events: auto; border-radius: 14px; padding: 8px; }
 .map a { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 7px; font-size: .82rem; }
 .map a:hover { background: #24354c; }
 .map span { width: 8px; height: 8px; border-radius: 50%; background: #ffc587; }
@@ -22,27 +27,35 @@ h1 { margin: 0; font-size: clamp(2.35rem, 5vw, 5rem); letter-spacing: -.04em; li
 .film-credit { margin: 4px 8px 2px; padding-top: 5px; border-top: 1px solid #364b60; }
 .map .film-credit a { display: block; padding: 2px; color: #b7c6d6; font-size: .65rem; line-height: 1.45; }
 .status { position: absolute; left: 50%; top: 48%; transform: translate(-50%, -50%); color: #c1dbe6; text-align: center; min-width: 190px; }
-.controls { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; padding: 8px 12px; border-radius: 12px; font-size: .8rem; white-space: nowrap; }
+.drive-ui { position: absolute; inset: auto 16px 22px; display: grid; justify-items: center; align-items: end; gap: 12px; pointer-events: none; }
+.drive-ui > * { pointer-events: auto; }
+.controls { display: flex; gap: 16px; align-items: center; padding: 8px 12px; border-radius: 12px; font-size: .8rem; white-space: nowrap; }
 .controls button { padding: 6px 9px; border: 1px solid #365069; background: #16243a; border-radius: 7px; }
 #billboard-toggle { color: #b9fff2; border-color: #407b86; }
-#visit { position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); border-radius: 10px; padding: 9px 14px; white-space: nowrap; }
-.drive-pad { position: absolute; bottom: 20px; right: 18px; display: none; grid-template-columns: repeat(3, 46px); gap: 6px; touch-action: none; }
+#visit { border-radius: 10px; padding: 9px 14px; }
+.drive-pad { display: none; grid-template-columns: repeat(3, 46px); gap: 6px; touch-action: none; }
 .drive-pad button { min-height: 42px; border-radius: 8px; font-size: 1.2rem; }
 .drive-pad button:first-child { grid-column: 2; }
 .drive-pad button:nth-child(2) { grid-column: 1; }
 @media (pointer: coarse), (max-width: 700px) {
-  .drive-pad { display: grid; }
+  .drive-ui {
+    bottom: 20px; gap: 8px; justify-items: stretch;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "visit pad" "controls controls";
+  }
+  .controls { grid-area: controls; justify-content: center; gap: 6px; }
+  .drive-pad { grid-area: pad; display: grid; }
+  #visit { grid-area: visit; justify-self: start; align-self: center; max-width: 100%; }
   .keys { display: none; }
-  .controls { left: 16px; right: 16px; justify-content: center; transform: none; bottom: 20px; gap: 6px; }
-  .drive-pad { bottom: 74px; }
-  #visit { bottom: 122px; }
+  .intro p { max-width: min(20rem, 88vw); }
+  @media (orientation: landscape) and (max-height: 450px) {
+    .drive-ui { grid-template-areas: "visit pad" "controls pad"; }
+    .controls { justify-self: start; }
+  }
 }
 @media (max-width: 560px) {
-  .back, .intro { left: 14px; }
-  .map { right: 14px; }
-  .intro { top: 165px; }
-}
-@media (pointer: coarse), (max-width: 700px) {
-  #visit { bottom: 90px; left: 16px; transform: none; }
-  .intro p { max-width: min(20rem, 88vw); }
+  .scene-header { inset-inline: 14px; }
+  @media (orientation: portrait) {
+    .scene-header { grid-template-areas: "back map" "intro intro"; gap: 8px; }
+  }
 }

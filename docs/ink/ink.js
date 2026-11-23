@@ -158,6 +158,14 @@ function startWash() {
   const ambientButton = document.getElementById('wash-ambient');
   const touch = document.getElementById('wash-touch');
   const brush = document.getElementById('wash-size');
+  let brushRadius;
+  function updateBrushSize() {
+    // The ink shader measures distance in units of the paper's height.
+    brushRadius = .019 + Number(brush.value) * .014;
+    cursor.style.height = `${brushRadius * 200}%`;
+  }
+  brush.addEventListener('input', updateBrushSize);
+  updateBrushSize();
   const shades = [[.09,.17,.19], [.18,.31,.55], [.69,.18,.12]];
   let color = 0, time = 0, ambient = 1, inkUntil = 0;
   let previous = 0, frame = 0, visible = true, lost = false;
@@ -228,7 +236,7 @@ function startWash() {
     gl.uniform2f(uniforms.size, bufferWidth, bufferHeight);
     gl.uniform4f(uniforms.stroke, ...from, ...to);
     gl.uniform3fv(uniforms.pigment, shades[color]);
-    gl.uniform1f(uniforms.radius, .019 + Number(brush.value) * .014);
+    gl.uniform1f(uniforms.radius, brushRadius);
     gl.uniform1f(uniforms.time, time);
     gl.uniform1f(uniforms.active, active);
     gl.uniform1f(uniforms.dt, dt);
@@ -303,10 +311,6 @@ function startWash() {
       previous = 0;
     }
   }
-  function penWidth(event) {
-    const width = [3, 5, 8, 13, 20][Number(brush.value) - 1];
-    return event.pointerType === 'pen' && event.pressure > 0 ? width * (.55 + .85 * event.pressure) : width;
-  }
   function addDrop(event, bounds, continuing = false) {
     const next = [(event.clientX - bounds.left) / bounds.width, 1 - (event.clientY - bounds.top) / bounds.height];
     const from = continuing && point ? point : next;
@@ -334,7 +338,6 @@ function startWash() {
     if (!cursor.hidden) {
       cursor.style.left = (event.clientX - bounds.left) + 'px';
       cursor.style.top = (event.clientY - bounds.top) + 'px';
-      cursor.style.width = cursor.style.height = Math.max(9, penWidth(event)) + 'px';
     }
     if (event.pointerId !== pointer || !point) return;
     addDrop(event, bounds, true);
@@ -384,6 +387,11 @@ function startWash() {
   document.addEventListener('visibilitychange', sync);
   canvas.addEventListener('webglcontextlost', () => {
     lost = true;
+    pointer = null;
+    point = null;
+    touchStart = null;
+    hero.classList.remove('brush-mode', 'ink-ready');
+    touch.setAttribute('aria-pressed', 'false');
     canvas.hidden = true;
     controls.hidden = true;
     cursor.hidden = true;
