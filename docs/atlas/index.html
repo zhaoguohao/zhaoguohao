@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="一份会随潮位改变的群岛图。测读高程，沿剖面观察海陆交界。">
+  <title>潮汐图室 · Aurora</title>
+  <link rel="stylesheet" href="./atlas.css">
+  <noscript><style>.bench { display: none; } .spread { grid-template-columns: 1fr; }</style></noscript>
+  <script defer src="./vendor/d3-array-3.2.4.min.js"></script>
+  <script defer src="./vendor/d3-contour-4.0.2.min.js"></script>
+  <script defer src="./atlas.js"></script>
+</head>
+<body>
+<div class="folio">
+  <nav class="binding" aria-label="作品导航"><a href="../">← Aurora 个人站</a><a href="../loops/">回环唱片 ↗</a></nav>
+  <main>
+    <header class="mast"><h1>潮汐图室</h1><p>调节潮位，看一座岛变成几座。<br>在这张生成的海图上，点选任意位置测读地形。</p></header>
+    <div class="spread">
+      <figure class="plate">
+        <figcaption><strong id="island-name">岬湾群岛</strong><span id="sheet">图幅 0427</span></figcaption>
+        <div class="map-window">
+          <canvas id="terrain" width="960" height="640" tabindex="0" aria-label="群岛地形测点，点选位置或用方向键移动" aria-describedby="map-help"></canvas>
+          <noscript><img class="print" src="./first-chart.webp" width="720" height="480" alt="岬湾群岛在零米潮位时的等高线海图"></noscript>
+          <div class="sight" hidden><i></i></div>
+          <div class="compass" aria-hidden="true">N<b></b></div>
+          <div class="scale" aria-hidden="true"><span>2 km</span></div>
+        </div>
+        <div class="map-key"><span><i class="water"></i>海床</span><span><i class="shore"></i>潮岸</span><span><i class="ridge"></i>高地</span><small>等高距 10 m</small></div>
+        <noscript><p class="help">当前展示零米潮位的海图。启用 JavaScript 后可以测图和调节潮位。</p></noscript>
+      </figure>
+      <aside class="bench" aria-label="测绘工具">
+        <div class="tide-block">
+          <label for="tide">潮位</label>
+          <div class="tide-value"><output id="tide-value" for="tide">0</output><span>m</span></div>
+          <input id="tide" type="range" min="-50" max="80" step="10" value="0" disabled>
+          <div class="range-ends"><span>−50 m</span><span>+80 m</span></div>
+          <p class="land">露出水面的面积 <strong id="land">—</strong></p>
+        </div>
+        <div class="section-block">
+          <h2>东西剖面</h2>
+          <canvas id="section" width="480" height="140" aria-label="沿当前测点从西到东的地形剖面"></canvas>
+          <div class="range-ends"><span>西 · 0 km</span><span>东 · 12 km</span></div>
+          <output class="reading" id="reading" aria-live="polite">待测点</output>
+        </div>
+        <button id="redraw" type="button" disabled>换一座岛 <span aria-hidden="true">↻</span></button>
+        <p class="help" id="map-help">点图或用方向键移动测点。当前图幅和潮位可用地址栏链接分享。</p>
+      </aside>
+    </div>
+  </main>
+  <footer><span>制图工具</span> <a href="https://d3js.org/d3-contour/contour">D3 Contour</a> · <a href="./vendor/LICENSES.txt">开源许可</a></footer>
+</div>
+</body>
+</html>

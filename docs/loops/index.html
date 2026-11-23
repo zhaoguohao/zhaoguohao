@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="一台圆形三轨鼓机。点亮唱片上的刻点，编写和分享你自己的十六步节奏。">
+  <title>回环唱片 · Aurora</title>
+  <link rel="stylesheet" href="./loops.css">
+  <script defer src="./loops.js"></script>
+</head>
+<body>
+<div class="sleeve">
+  <nav aria-label="作品导航"><a href="../">← Aurora 个人站</a><a href="../atlas/">潮汐图室 ↗</a></nav>
+  <main>
+    <header class="mast"><h1>回环唱片</h1><p>点亮刻点，把一小节节奏刻进三圈唱片。<br>从正上方开始，顺时针演奏。</p></header>
+    <div class="studio">
+      <figure class="deck">
+        <div class="disc" aria-label="三轨节奏盘">
+          <div class="ring kick" data-track="0" role="group" aria-label="外圈，底鼓"></div>
+          <div class="ring wood" data-track="1" role="group" aria-label="中圈，木击"></div>
+          <div class="ring bell" data-track="2" role="group" aria-label="内圈，铃音"></div>
+          <div class="needle" aria-hidden="true" hidden></div>
+          <div class="hub"><span>4/4</span><i></i><small id="position" aria-hidden="true">16 STEPS</small></div>
+        </div>
+        <figcaption><span class="kick"><i></i>外圈 · 底鼓</span><span class="wood"><i></i>中圈 · 木击</span><span class="bell"><i></i>内圈 · 铃音</span></figcaption>
+      </figure>
+      <section class="console" aria-label="唱片控制">
+        <div class="presets" role="group" aria-labelledby="presets-title">
+          <h2 id="presets-title">选一张底谱</h2>
+          <div class="choices"><button data-preset="0" disabled>夜航</button><button data-preset="1" disabled>切分</button><button data-preset="2" disabled>慢摇</button></div>
+        </div>
+        <div class="tempo">
+          <label for="tempo">转动速度</label>
+          <div class="dial"><output id="bpm" for="tempo">104</output><span>BPM</span></div>
+          <input type="range" id="tempo" min="60" max="160" value="104" disabled>
+          <div class="ends"><span>60</span><span>160</span></div>
+        </div>
+        <button class="transport" id="play" type="button" disabled><i aria-hidden="true"></i><span>播放节奏</span></button>
+        <p class="message" id="message" role="status"></p>
+        <p class="notes">点按刻点开关音符。键盘可用方向键选点、空格切换。当前谱面和速度可用地址栏链接分享。</p>
+        <noscript><p class="notes">启用 JavaScript 后可以编辑和播放谱面。</p></noscript>
+      </section>
+    </div>
+  </main>
+  <footer>声音由浏览器实时合成。排拍参考 <a href="https://github.com/cwilso/metronome">Chris Wilson 的 Web Audio Metronome</a>。</footer>
+</div>
+</body>
+</html>
