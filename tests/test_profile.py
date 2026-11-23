@@ -33,11 +33,14 @@ class ProfileTests(unittest.TestCase):
   self.assertEqual(snake_panel(), snake_panel())
  def test_homepage_motion_links_resolve_in_generated_snake(self):
   page = (ROOT / 'docs/index.html').read_text(encoding='utf-8')
-  fragments = set(re.findall(r'contributions-serpent\.svg[^"#]*#([\w-]+)', page))
-  self.assertEqual(fragments, {'serpent-play', 'serpent-pause'})
+  links = re.findall(r'"([^"]*/contributions-serpent\.svg[^"#]*)#([\w-]+)"', page)
+  views = {fragment: url for url, fragment in links}
+  self.assertEqual(set(views), {'serpent-play', 'serpent-pause'})
+  self.assertNotEqual(views['serpent-play'], views['serpent-pause'])
+  self.assertEqual(len(set(links)), 2)
   artwork = ET.fromstring(snake_panel())
   styles = ''.join(node.text or '' for node in artwork.iter('{http://www.w3.org/2000/svg}style'))
-  for fragment in fragments:
+  for fragment in views:
    self.assertIsNotNone(artwork.find(f".//*[@id='{fragment}']"))
    self.assertIn(f'#{fragment}:target', styles)
 if __name__=='__main__': unittest.main()

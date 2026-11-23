@@ -110,12 +110,13 @@
   </div>
   <div id="snake" class="deferred-art" style="aspect-ratio: 960 / 400">
     <p class="art-status">加载中 · GitHub 贡献贪吃蛇动画</p>
+    <!-- Separate request URLs keep browsers from reusing the playing image for the still view. -->
     <picture>
-      <source media="(prefers-reduced-motion: reduce)" data-srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-pause">
+      <source media="(prefers-reduced-motion: reduce)" data-srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control-still#serpent-pause">
       <img hidden data-src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-play" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
     </picture>
     <noscript><picture>
-      <source media="(prefers-reduced-motion: reduce)" srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-pause">
+      <source media="(prefers-reduced-motion: reduce)" srcset="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control-still#serpent-pause">
       <img src="https://raw.githubusercontent.com/zhaoguohao/zhaoguohao/master/assets/profile/contributions-serpent.svg?v=motion-control#serpent-play" width="960" height="400" alt="GitHub 贡献贪吃蛇动画">
     </picture></noscript>
   </div>
