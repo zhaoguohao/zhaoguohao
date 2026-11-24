@@ -153,6 +153,7 @@
 
   function requestImage(panel) {
     const image = panel.querySelector('img');
+    if (image.hasAttribute('src')) return;
     const status = panel.querySelector('.art-status');
     image.addEventListener('load', () => {
       image.hidden = false;
@@ -175,20 +176,21 @@
   if ('IntersectionObserver' in window) {
     function loadIntersectingArt(entries, observer) {
       for (const entry of entries) {
-        if (entry.isIntersecting) {
+        if (entry.intersectionRatio > 0) {
           observer.unobserve(entry.target);
           requestImage(entry.target);
         }
       }
     }
 
-    const [datePanel, ...otherPanels] = deferredArt;
-    const observer = new IntersectionObserver(loadIntersectingArt);
-    otherPanels.forEach((panel) => observer.observe(panel));
+    const datePanel = document.getElementById('timeline');
+    const observer = new IntersectionObserver(loadIntersectingArt, {threshold: .01});
+    deferredArt.forEach(panel => observer.observe(panel));
+    if (location.hash === '#timeline') requestImage(datePanel);
 
-    // Start the small date card near the viewport after the lead artwork.
+    // A visible card can load immediately. Only speculative loading waits for the hero.
     const dateObserver = new IntersectionObserver(loadIntersectingArt, {
-      rootMargin: '0px 0px 240px 0px'
+      rootMargin: '0px 0px 240px 0px', threshold: .01
     });
     const watchDate = () => dateObserver.observe(datePanel);
     if (hero.complete) {

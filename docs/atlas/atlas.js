@@ -189,8 +189,14 @@
     const x = probe.x / (columns-1) * w, z = heights[probe.y*columns+probe.x];
     ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.strokeStyle = '#8f4634'; ctx.stroke();
     ctx.beginPath(); ctx.arc(x,screenY(z),3.5,0,2*Math.PI); ctx.fillStyle = '#9b3f2b'; ctx.fill();
-    const relative = Math.round(z - tide);
-    document.getElementById('reading').textContent = '测点 · ' + (relative < 0 ? '水下 ' : '水面以上 ') + Math.abs(relative) + ' m';
+    const relative = z - tide;
+    let reading = '与水面齐平';
+    if (relative !== 0) {
+      const distance = Math.abs(relative);
+      const side = relative < 0 ? '水下' : '水面以上';
+      reading = side + (distance < 1 ? '不足 1 m' : ' ' + Math.round(distance) + ' m');
+    }
+    document.getElementById('reading').textContent = '测点 · ' + reading;
     sight.style.setProperty('--east', (probe.x+.5)/columns*100 + '%');
     sight.style.setProperty('--north', (probe.y+.5)/rows*100 + '%');
     sight.hidden = false;

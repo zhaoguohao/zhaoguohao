@@ -5,15 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="一台圆形三轨鼓机。点亮唱片上的刻点，编写和分享你自己的十六步节奏。">
   <title>回环唱片 · Aurora</title>
-  <link rel="stylesheet" href="./loops.css">
-  <script defer src="./loops.js?v=keyboard-nav"></script>
+  <link rel="stylesheet" href="./loops.css?v=score-preview">
+  <script defer src="./loops.js?v=score-preview"></script>
 </head>
 <body>
 <div class="sleeve">
   <nav aria-label="作品导航"><a href="../">← Aurora 个人站</a><a href="../atlas/">潮汐图室 ↗</a></nav>
   <main>
     <header class="mast"><h1>回环唱片</h1><p>点亮刻点，把一小节节奏刻进三圈唱片。<br>从正上方开始，顺时针演奏。</p></header>
-    <div class="studio">
+    <section class="score-preview" id="score-preview" aria-labelledby="preview-title">
+      <h2 id="preview-title">夜航示例 · 104 BPM</h2>
+      <p>一小节共 16 步，每件乐器在以下步号发声。</p>
+      <dl>
+        <dt class="kick">底鼓</dt><dd>1、7、9、15</dd>
+        <dt class="wood">木击</dt><dd>5、13</dd>
+        <dt class="bell">铃音</dt><dd>1、4、8、11、15</dd>
+      </dl>
+      <p>编谱工具尚未加载。启用 JavaScript 后，<a href="">重新加载当前谱面</a>即可编辑和播放。</p>
+    </section>
+    <div class="studio" hidden>
       <figure class="deck">
         <div class="disc" aria-label="三轨节奏盘">
           <div class="ring kick" data-track="0" role="group" aria-label="外圈，底鼓"></div>
@@ -38,7 +48,6 @@
         <button class="transport" id="play" type="button" disabled><i aria-hidden="true"></i><span>播放节奏</span></button>
         <p class="message" id="message" role="status"></p>
         <p class="notes">点按刻点开关音符。键盘可用方向键选点、空格切换。当前谱面和速度可用地址栏链接分享。</p>
-        <noscript><p class="notes">启用 JavaScript 后可以编辑和播放谱面。</p></noscript>
       </section>
     </div>
   </main>

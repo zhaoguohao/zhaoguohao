@@ -148,12 +148,9 @@ function startWash() {
     return {program, position: gl.getAttribLocation(program, 'position'),
       uniforms: Object.fromEntries(names.map(name => [name, gl.getUniformLocation(program, name)]))};
   }
-  const render = makeProgram(fragmentSource, ['resolution', 'time', 'ambient', 'inkMap']);
-  const transport = makeProgram(transportSource, ['size', 'previousInk', 'stroke', 'pigment', 'radius', 'active', 'time', 'dt']);
-  const triangle = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, triangle);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  let render, transport, triangle;
   const controls = document.querySelector('.ink-controls');
+  const status = document.getElementById('wash-status');
   const pause = document.getElementById('wash-pause');
   const ambientButton = document.getElementById('wash-ambient');
   const touch = document.getElementById('wash-touch');
@@ -171,6 +168,9 @@ function startWash() {
   let previous = 0, frame = 0, visible = true, lost = false;
   let flowing = !motion.matches;
   let buffers = [], bufferWidth, bufferHeight;
+  const origin = [0, 0];
+  const wetSteps = [];
+  let wetCheckpoint;
   let point = null;
   let pointer = null;
   let touchStart = null;
@@ -207,12 +207,19 @@ function startWash() {
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
     inkUntil = 0;
+    wetSteps.length = 0;
+    wetCheckpoint = undefined;
   }
-  function settleInk() {
-    if (!inkUntil || !buffers.length) return;
+  function readWetInk() {
     const pixels = new Uint8Array(bufferWidth * bufferHeight * 4);
     gl.bindFramebuffer(gl.FRAMEBUFFER, buffers[0].framebuffer);
     gl.readPixels(0, 0, bufferWidth, bufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+    return gl.isContextLost() ? null : pixels;
+  }
+  function settleInk() {
+    if (!inkUntil || !buffers.length || gl.isContextLost()) return;
+    const pixels = readWetInk();
+    if (!pixels) return;
     const stain = document.createElement('canvas');
     stain.width = bufferWidth;
     stain.height = bufferHeight;
@@ -229,19 +236,32 @@ function startWash() {
     hasStrokes = true;
     clearInk();
   }
-  function advect(dt, from = [0, 0], to = from, active = 0) {
+  function drawInkStep({dt, from, to, active, shade, radius, clock}) {
     const [current, next] = buffers;
     const uniforms = use(transport, next.framebuffer, bufferWidth, bufferHeight, current.texture);
     gl.uniform1i(uniforms.previousInk, 0);
     gl.uniform2f(uniforms.size, bufferWidth, bufferHeight);
     gl.uniform4f(uniforms.stroke, ...from, ...to);
-    gl.uniform3fv(uniforms.pigment, shades[color]);
-    gl.uniform1f(uniforms.radius, brushRadius);
-    gl.uniform1f(uniforms.time, time);
+    gl.uniform3fv(uniforms.pigment, shades[shade]);
+    gl.uniform1f(uniforms.radius, radius);
+    gl.uniform1f(uniforms.time, clock);
     gl.uniform1f(uniforms.active, active);
     gl.uniform1f(uniforms.dt, dt);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
     buffers = [next, current];
+  }
+  function advect(dt, from = origin, to = from, active = 0) {
+    const step = {dt, from, to, active, shade: color, radius: brushRadius, clock: time};
+    drawInkStep(step);
+    wetSteps.push(step);
+    // Short strokes dry on the paper. Bound recovery work during longer sessions.
+    if (wetSteps.length >= 128 && !gl.isContextLost()) {
+      const pixels = readWetInk();
+      if (pixels) {
+        wetCheckpoint = pixels;
+        wetSteps.length = 0;
+      }
+    }
   }
   function paint() {
     if (lost || !buffers.length) return;
@@ -253,13 +273,16 @@ function startWash() {
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
   function fit() {
-    if (lost) return;
+    if (lost || gl.isContextLost()) return;
     const width = Math.max(1, hero.clientWidth), height = Math.max(1, hero.clientHeight);
     const ratio = Math.min(.82, 1000 / width, 720 / height);
     const nextWidth = Math.max(1, Math.round(width * ratio)), nextHeight = Math.max(1, Math.round(height * ratio));
     const inkScale = Math.min(devicePixelRatio || 1, 1.5, 1800 / width, 1250 / height);
     const inkWidth = Math.max(1, Math.round(width * inkScale)), inkHeight = Math.max(1, Math.round(height * inkScale));
-    if (buffers.length && (canvas.width !== nextWidth || canvas.height !== nextHeight)) settleInk();
+    if (buffers.length && (canvas.width !== nextWidth || canvas.height !== nextHeight)) {
+      settleInk();
+      if (gl.isContextLost()) return;
+    }
     if (strokes.width !== inkWidth || strokes.height !== inkHeight) {
       const old = hasStrokes ? document.createElement('canvas') : null;
       if (old) {
@@ -385,24 +408,55 @@ function startWash() {
   pause.addEventListener('click', () => { flowing = !flowing; sync(); });
   motion.addEventListener('change', () => { flowing = !motion.matches; sync(); });
   document.addEventListener('visibilitychange', sync);
-  canvas.addEventListener('webglcontextlost', () => {
+  function showWash() {
+    canvas.hidden = lost;
+    controls.hidden = lost;
+    status.hidden = !lost;
+    if (lost) cursor.hidden = true;
+    hero.classList.toggle('ink-ready', !lost);
+    hero.classList.toggle('brush-mode', !lost && touch.getAttribute('aria-pressed') === 'true');
+    sync();
+  }
+  function initializeGraphics() {
+    try {
+      render = makeProgram(fragmentSource, ['resolution', 'time', 'ambient', 'inkMap']);
+      transport = makeProgram(transportSource, ['size', 'previousInk', 'stroke', 'pigment', 'radius', 'active', 'time', 'dt']);
+      triangle = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, triangle);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      lost = false;
+      if (bufferWidth) {
+        // Restore at the original resolution before fit handles a change in paper size.
+        buffers = [createBuffer(), createBuffer()];
+        if (wetCheckpoint) {
+          gl.bindTexture(gl.TEXTURE_2D, buffers[0].texture);
+          gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, bufferWidth, bufferHeight, gl.RGBA, gl.UNSIGNED_BYTE, wetCheckpoint);
+        }
+        wetSteps.forEach(drawInkStep);
+        paint();
+      }
+      fit();
+    } catch (error) {
+      lost = true;
+      console.warn('Ink rendering unavailable', error);
+    }
+    showWash();
+  }
+  canvas.addEventListener('webglcontextlost', event => {
+    event.preventDefault();
     lost = true;
+    buffers = [];
+    if (pointer !== null && hero.hasPointerCapture(pointer)) hero.releasePointerCapture(pointer);
     pointer = null;
     point = null;
     touchStart = null;
-    hero.classList.remove('brush-mode', 'ink-ready');
-    touch.setAttribute('aria-pressed', 'false');
-    canvas.hidden = true;
-    controls.hidden = true;
-    cursor.hidden = true;
-    sync();
+    status.textContent = '墨流暂时中断，可继续浏览山径。';
+    showWash();
   });
+  canvas.addEventListener('webglcontextrestored', initializeGraphics);
   new ResizeObserver(fit).observe(hero);
   new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }).observe(hero);
-  fit();
-  hero.classList.add('ink-ready');
-  controls.hidden = false;
-  sync();
+  initializeGraphics();
 }
 
 try { startWash(); } catch (error) { console.warn('Ink rendering unavailable', error); }

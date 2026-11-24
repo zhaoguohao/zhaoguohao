@@ -19,7 +19,7 @@ h1, h2 { margin: 0; font-weight: 500; }
 h1 { font-size: clamp(5rem, 14vw, 12.5rem); letter-spacing: -.11em; line-height: .98; }
 h1 span { color: #283f43; }
 .lede { margin: 21px 0; font-size: clamp(1.12rem, 2.8vw, 1.8rem); letter-spacing: .12em; }
-.ink-controls p { margin: 31px 0 11px; font-family: system-ui, sans-serif; font-size: .82rem; color: #465359; }
+.ink-controls p, .wash-status { margin: 31px 0 11px; font-family: system-ui, sans-serif; font-size: .82rem; color: #465359; }
 .tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tools button { min-height: 34px; border: 1px solid #a59887; background: #f6eedf; padding: 5px 11px; border-radius: 999px; font-family: system-ui, sans-serif; font-size: .78rem; }
 .tools .swatch { padding: 0; width: 31px; min-height: 31px; border: 3px solid #f2eadb; background: #31424a; }

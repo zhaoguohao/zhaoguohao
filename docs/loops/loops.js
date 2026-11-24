@@ -227,4 +227,6 @@
   window.addEventListener('pagehide', stop);
   setTransport(false);
   updateScore();
+  document.getElementById('score-preview').hidden = true;
+  document.querySelector('.studio').hidden = false;
 })();

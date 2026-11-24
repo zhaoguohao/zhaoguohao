@@ -13,6 +13,12 @@ h1, h2, p, figure { margin: 0; }
 h1 { font-family: "Archivo Black", "Microsoft YaHei", system-ui, sans-serif; font-size: clamp(3.35rem, 7.8vw, 7.5rem); font-weight: 900; letter-spacing: -.035em; line-height: 1.04; }
 .mast p, .notes, .message { font: .91rem/1.7 system-ui,sans-serif; color: #dfd2df; }
 .studio { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(230px, 1fr); border-block: 1px solid var(--rule); }
+.studio[hidden], .score-preview[hidden] { display: none; }
+.score-preview { border-block: 1px solid var(--rule); padding: clamp(20px, 4vw, 48px) 0; }
+.score-preview p { margin-top: 9px; font: .91rem/1.7 system-ui, sans-serif; color: #dfd2df; }
+.score-preview dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 24px; margin: 22px 0; }
+.score-preview dt { color: var(--voice); }
+.score-preview dd { margin: 0; }
 .deck { min-width: 0; padding: clamp(12px, 2.4vw, 30px) 0 16px; text-align: center; border-right: 1px solid var(--rule); background: repeating-linear-gradient(125deg, transparent 0 7px, #eec7cf08 7px 8px); }
 .disc { width: min(calc(100% - 26px), 51vh, 590px); min-width: min(100% - 26px, 340px); margin: 0 auto; position: relative; isolation: isolate; aspect-ratio: 1; border-radius: 50%; border: 2px solid #171421;
   background: repeating-radial-gradient(circle, #fff4d418 0 .6px, transparent 1px 4px), conic-gradient(from 24deg, #211c2c, #5a4b61 13%, #201d2a 24%, #302638 44%, #514254 65%, #1b1a29 79%, #302b3a);

@@ -195,14 +195,14 @@ export function startIsland() {
     toggleVideo.textContent = '暂停大屏';
     toggleVideo.setAttribute('aria-pressed', 'true');
   });
-  video.addEventListener('pause', () => {
-    toggleVideo.textContent = '播放大屏';
+  function showStoppedScreen() {
+    toggleVideo.textContent = video.error ? '重试播放' : '播放大屏';
     toggleVideo.setAttribute('aria-pressed', 'false');
-  });
+  }
+  video.addEventListener('pause', showStoppedScreen);
   video.addEventListener('error', () => {
     screenMaterial.map = poster;
-    toggleVideo.textContent = '重试播放';
-    toggleVideo.setAttribute('aria-pressed', 'false');
+    showStoppedScreen();
   });
   async function syncScreen() {
     const shouldPlay = playbackChoice ?? !reducedMotion;
@@ -217,7 +217,7 @@ export function startIsland() {
     const request = video.play();
     playRequest = request;
     try { await request; }
-    catch { if (playRequest === request && !video.error) toggleVideo.textContent = '播放大屏'; }
+    catch { if (playRequest === request) showStoppedScreen(); }
     finally { if (playRequest === request) playRequest = null; }
   }
   function toggleScreen() {
